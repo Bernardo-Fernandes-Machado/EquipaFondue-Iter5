@@ -513,7 +513,7 @@ function renderDelivery() {
     <div class="del-grid">
       <div>
         <div class="info-banner info-blue mb-5">
-          ℹ️ Entregas disponíveis <strong>de segunda a sexta-feira</strong>, entre
+          ℹ️ Entregas disponíveis<strong>de segunda a sexta-feira</strong>, entre
           <strong>${minD.toLocaleDateString('pt-PT',{day:'numeric',month:'long'})}</strong> e
           <strong>${maxD.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})}</strong>.
         </div>
