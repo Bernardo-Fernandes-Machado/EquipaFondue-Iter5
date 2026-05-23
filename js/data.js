@@ -33,7 +33,7 @@ const APPLIANCES = [
   { id:'a7', name:'Miele W1 ChromeEdition', brand:'Miele', category:'Máquina de Lavar',
     description:'Máquina de lavar premium com tambor em favo de mel e TwinDos automático.',
     features:['TwinDos','A+++','WiFiConn@ct'],
-    image:'https://images.unsplash.com/photo-1610557892470-55d9e80e0bce?w=400&h=300&fit=crop' },
+    image:'https://images.unsplash.com/photo-1778731660255-215c9172e18d?w=400&h=300&fit=crop' },
   { id:'a8', name:'Electrolux PerfectCare 800', brand:'Electrolux', category:'Máquina de Secar',
     description:'Secadora de condensação com tecnologia SensiDry para máxima eficiência.',
     features:['SensiDry','9kg','A++'],
@@ -53,7 +53,7 @@ const APPLIANCES = [
   { id:'a12', name:'Samsung WindFree AC', brand:'Samsung', category:'Ar Condicionado',
     description:'Sistema WindFree sem fluxo de ar direto para conforto máximo.',
     features:['WindFree','Wi-Fi','A+++'],
-    image:'https://plus.unsplash.com/premium_photo-1676320514036-fcc490dbd855?w=400&h=300&fit=crop' },
+    image:'https://plus.unsplash.com/premium_photo-1676320514036-fcc490dbd855?w=400&h=300&fit=crop&crop=focalpoint&fp-y=0&fp-x=0.2' },
 ];
 
 const CATEGORY_ICONS = {
