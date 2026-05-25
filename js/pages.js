@@ -21,11 +21,11 @@ function renderRegister() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="text" id="r-pass" placeholder="Mínimo 4 caracteres">
+        <input type="password" id="r-pass" placeholder="Mínimo 4 caracteres">
       </div>
       <div class="field">
         <label>Confirmar password</label>
-        <input type="text" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
+        <input type="password" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
       </div>
       <button class="btn btn-primary w-full" onclick="doRegister()" style="margin-top:.5rem">Criar conta →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -72,7 +72,7 @@ function renderLogin() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="text" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="password" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-primary w-full" onclick="doLogin()" style="margin-top:.5rem">Entrar →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -107,8 +107,11 @@ function renderHome() {
         Entrega, instalação e 2 manutenções gratuitas incluídas.
       </p>
       <div class="hero-btns">
-        <button class="btn btn-primary" data-nav="/plans">Ver Planos →</button>
-        <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>
+        ${loggedIn
+          ? `<button class="btn btn-primary" data-nav="/plans">Ver Planos →</button>
+             <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>`
+          : `<button class="btn btn-primary" data-nav="/register">Registar-se →</button>
+             <button class="btn btn-ghost" data-nav="/login">Já tenho conta</button>`}
       </div>
       <div class="hero-trust">
         <span class="hero-trust-item">✅ Dois planos disponíveis</span>
@@ -134,7 +137,7 @@ function renderHome() {
         <p>Dois planos para se adaptar às suas necessidades.</p>
       </div>
       <div class="plans-grid">
-        <div class="plan-card" data-nav="/plans">
+        <div class="plan-card" data-nav="${loggedIn?'/plans':'/register'}">
           <div class="plan-head"><h3>Plano Parcial</h3>
             <div class="plan-price-row"><span class="plan-price">€600</span><span class="plan-period">/ano</span></div>
           </div>
@@ -144,7 +147,7 @@ function renderHome() {
             <div class="plan-feature"><span>✓</span> Entrega e instalação</div>
           </div>
         </div>
-        <div class="plan-card" style="border-color:var(--teal)" data-nav="/plans">
+        <div class="plan-card" style="border-color:var(--teal)" data-nav="${loggedIn?'/plans':'/register'}">
           <div class="plan-head" style="position:relative">
             <div style="position:absolute;top:10px;right:10px;background:var(--teal);color:white;font-size:.7rem;padding:2px 10px;border-radius:999px">Mais popular</div>
             <h3>Plano Completo</h3>
@@ -158,8 +161,8 @@ function renderHome() {
         </div>
       </div>
       <div style="text-align:center;margin-top:2rem">
-        <button class="btn btn-primary" data-nav="/plans">
-          Escolher plano →
+        <button class="btn btn-primary" data-nav="${loggedIn?'/plans':'/register'}">
+          ${loggedIn?'Escolher plano →':'Registar-se e subscrever →'}
         </button>
       </div>
     </div>
@@ -186,7 +189,7 @@ function renderHome() {
           <h2 style="margin-bottom:4px">Eletrodomésticos disponíveis</h2>
           <p class="text-gray" style="font-size:.9rem">Marcas premium, tudo incluído na subscrição.</p>
         </div>
-        <button class="text-teal fw-600 text-sm" data-nav="/appliances"
+        <button class="text-teal fw-600 text-sm" data-nav="${loggedIn?'/appliances':'/register'}"
           style="background:none;border:none;cursor:pointer">Ver todos →</button>
       </div>
       <div class="app-grid">${APPLIANCES.slice(0,6).map(a=>appCard(a)).join('')}</div>
@@ -198,9 +201,9 @@ function renderHome() {
     <p style="color:#ccfbf1;margin-bottom:1.75rem;max-width:30rem;margin-left:auto;margin-right:auto;font-size:.95rem">
       Junte-se a milhares de famílias que desfrutam de eletrodomésticos premium sem complicações.
     </p>
-    <button class="btn" data-nav="/plans"
+    <button class="btn" data-nav="${loggedIn?'/plans':'/register'}"
       style="background:white;color:var(--teal-d);font-weight:600">
-      Escolher plano →
+      ${loggedIn?'Escolher plano →':'Criar conta gratuita →'}
     </button>
   </section>`;
 }
@@ -270,11 +273,7 @@ function renderPlans() {
   </div>`;
 }
 
-function choosePlan(planId) {
-  if (!isLoggedIn()) { navigate('/login'); return; }
-  selectPlan(planId);
-  renderPlans();
-}
+function choosePlan(planId) { selectPlan(planId); renderPlans(); }
 
 // ─── APPLIANCES ───────────────────────────────────────────────────────────────
 let appFilter = 'Todos', appSearch = '';
@@ -467,7 +466,6 @@ function renderSubscription() {
 }
 
 function handleConfirmSub() {
-  if (!isLoggedIn()) { navigate('/login'); return; }
   if (getSelectedAppliances().length===0) return;
   confirmSubscription();
   navigate('/delivery');
@@ -479,7 +477,6 @@ const SLOTS=['08:00 – 10:00','10:00 – 12:00','12:00 – 14:00','14:00 – 16
 let dState={yr:null,mo:null,date:null,slot:null,addr:''};
 
 function renderDelivery() {
-  if (!isLoggedIn()) { navigate('/login'); return; }
   const today=new Date();
   const minD=new Date(today); minD.setDate(today.getDate()+7);
   const maxD=new Date(today); maxD.setDate(today.getDate()+30);
@@ -576,14 +573,21 @@ function pickDate(d){dState.date=new Date(dState.yr,dState.mo,d);dState.slot=nul
 function pickSlot(s){dState.slot=s;renderDelivery();}
 
 function confirmDel(){
-  if (!isLoggedIn()) { navigate('/login'); return; }
   if(!dState.date||!dState.slot||!dState.addr) return;
+
   const del={
     date:dState.date.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
-    slot:dState.slot, addr:dState.addr
+    slot:dState.slot,
+    addr:dState.addr,
+    items:getSelectedAppliances()
   };
-  saveDelivery(del);
-  // reset form para permitir agendar outra
+
+  const result=saveDelivery(del);
+  if(!result.ok){
+    alert(result.error);
+    return;
+  }
+
   dState={yr:null,mo:null,date:null,slot:null,addr:''};
   renderDeliverySuccess(del);
 }
@@ -618,7 +622,6 @@ function renderDeliverySuccess(del){
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDashboard(){
-  if (!isLoggedIn()) { navigate('/login'); return; }
   const user=getCurrentUser();
   const plan=getCurrentPlan();
   const selected=getSelectedAppliances();
