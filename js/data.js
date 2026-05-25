@@ -148,10 +148,16 @@ return APPLIANCES.filter(a => getState().selectedIds.includes(a.id));
 function addAppliance(id) {
 const state = getState();
 const plan = getCurrentPlan();
-if (!plan || state.selectedIds.length >= plan.maxAppliances) return false;
-if (state.selectedIds.includes(id)) return false;
+if (!plan) return false;
+if (state.selectedIds.includes(id)) {
+alert('Este eletrodoméstico já foi adicionado.');
+return false;
+}
+if (state.selectedIds.length >= plan.maxAppliances) {
+alert(`O teu plano permite apenas ${plan.maxAppliances} eletrodomésticos.`);
+return false;
+}
 state.selectedIds.push(id);
-// se estava cancelado, remove o cancel
 state.cancelledIds = (state.cancelledIds||[]).filter(i => i !== id);
 saveState(state);
 return true;
@@ -186,8 +192,25 @@ saveState(state);
 function saveDelivery(delivery) {
 const state = getState();
 if (!state.deliveries) state.deliveries = [];
+
+const sameDate = state.deliveries.some(d => d.date === delivery.date);
+if (sameDate) {
+return { ok:false, error:'Já tens uma entrega marcada nesse dia.' };
+}
+
+const duplicateAppliance = state.deliveries.some(d =>
+(d.items || []).some(item =>
+(delivery.items || []).some(sel => sel.id === item.id)
+)
+);
+
+if (duplicateAppliance) {
+return { ok:false, error:'Já tens um destes eletrodomésticos com entrega agendada.' };
+}
+
 state.deliveries.push(delivery);
 saveState(state);
+return { ok:true };
 }
 
 function getDeliveries() {
