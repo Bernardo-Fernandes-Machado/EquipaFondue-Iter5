@@ -21,11 +21,11 @@ function renderRegister() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="text" id="r-pass" placeholder="Mínimo 4 caracteres">
+        <input type="password" id="r-pass" placeholder="Mínimo 4 caracteres">
       </div>
       <div class="field">
         <label>Confirmar password</label>
-        <input type="text" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
+        <input type="password" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
       </div>
       <button class="btn btn-primary w-full" onclick="doRegister()" style="margin-top:.5rem">Criar conta →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -72,7 +72,7 @@ function renderLogin() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="text" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="password" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-primary w-full" onclick="doLogin()" style="margin-top:.5rem">Entrar →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -574,12 +574,20 @@ function pickSlot(s){dState.slot=s;renderDelivery();}
 
 function confirmDel(){
   if(!dState.date||!dState.slot||!dState.addr) return;
+
   const del={
     date:dState.date.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
-    slot:dState.slot, addr:dState.addr
+    slot:dState.slot,
+    addr:dState.addr,
+    items:getSelectedAppliances()
   };
-  saveDelivery(del);
-  // reset form para permitir agendar outra
+
+  const result=saveDelivery(del);
+  if(!result.ok){
+    alert(result.error);
+    return;
+  }
+
   dState={yr:null,mo:null,date:null,slot:null,addr:''};
   renderDeliverySuccess(del);
 }
