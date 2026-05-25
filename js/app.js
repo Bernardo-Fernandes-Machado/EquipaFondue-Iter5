@@ -1,11 +1,7 @@
 // ─── ROUTER ──────────────────────────────────────────────────────────────────
-// Páginas públicas (sem login): /, /login, /register, /appliances, /plans
-// Páginas privadas (requerem login): /subscription, /delivery, /dashboard
-const PUBLIC_PATHS = ['/', '/login', '/register', '/appliances', '/plans'];
-const PRIVATE_PATHS = ['/subscription', '/delivery', '/dashboard'];
-
 function navigate(path) {
-  if (PRIVATE_PATHS.includes(path) && !isLoggedIn()) {
+  const pub = ['/', '/login', '/register'];
+  if (!pub.includes(path) && !isLoggedIn()) {
     history.pushState(null, '', '/login');
     renderPage('/login'); return;
   }
@@ -15,7 +11,8 @@ function navigate(path) {
 }
 
 function renderPage(path) {
-  if (PRIVATE_PATHS.includes(path) && !isLoggedIn()) {
+  const pub = ['/', '/login', '/register'];
+  if (!pub.includes(path) && !isLoggedIn()) {
     path = '/login';
     history.replaceState(null, '', '/login');
   }
@@ -65,11 +62,10 @@ function updateNavbar() {
       <div class="nb-logo" data-nav="/">Home<span>Loop</span></div>
       <div class="nb-links">
         ${lnk('Início','/')}
-        ${lnk('Catálogo','/appliances')}
-        ${lnk('Planos','/plans')}
         ${loggedIn ? `
+          ${lnk('Catálogo','/appliances')}
+          ${lnk('Planos','/plans')}
           ${lnk('Subscrição','/subscription')}
-          ${lnk('Painel','/dashboard')}
         ` : ''}
       </div>
       <div class="nb-right">
@@ -98,8 +94,6 @@ function updateNavbar() {
         <button onclick="handleLogout()" style="color:var(--red)">Sair</button>
       ` : `
         <button data-nav="/">Início</button>
-        <button data-nav="/appliances">Catálogo</button>
-        <button data-nav="/plans">Planos</button>
         <button data-nav="/login">Entrar</button>
         <button data-nav="/register">Registar-se</button>
       `}
@@ -128,7 +122,7 @@ function renderFooter() {
         </div>
         <div>
           <h4 style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#cbd5e1;margin-bottom:.875rem">Produto</h4>
-          ${['Catálogo,/appliances','Planos,/plans'].map(i=>{
+          ${['Catálogo,/appliances','Planos,/plans','Subscrição,/subscription'].map(i=>{
             const [l,p]=i.split(',');
             return `<button data-nav="${p}" style="display:block;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.82rem;margin-bottom:7px;font-family:'DM Sans',sans-serif;text-align:left">${l}</button>`;
           }).join('')}
@@ -152,7 +146,6 @@ function renderFooter() {
 
 // ─── APPLIANCE CARD ──────────────────────────────────────────────────────────
 function appCard(a, showCancel = false) {
-  const loggedIn = isLoggedIn();
   const sel = isSelected(a.id);
   const plan = getCurrentPlan();
   const state = getState();
@@ -160,8 +153,7 @@ function appCard(a, showCancel = false) {
   const icon = CATEGORY_ICONS[a.category] || '📦';
 
   let btnClass, btnLabel;
-  if (!loggedIn)   { btnClass='no-plan';  btnLabel='Inicie sessão para alugar'; }
-  else if (!plan)  { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
+  if (!plan)       { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
   else if (sel)    { btnClass='is-added'; btnLabel='✓ Adicionado — clique para remover'; }
   else if (full)   { btnClass='is-full';  btnLabel=`Plano completo (${plan.maxAppliances}/${plan.maxAppliances})`; }
   else             { btnClass='can-add';  btnLabel='Adicionar à subscrição'; }
@@ -193,7 +185,6 @@ function appCard(a, showCancel = false) {
 }
 
 function toggleApp(id) {
-  if (!isLoggedIn()) { navigate('/login'); return; }
   if (!getCurrentPlan()) { navigate('/plans'); return; }
   if (isSelected(id)) removeAppliance(id);
   else addAppliance(id);
