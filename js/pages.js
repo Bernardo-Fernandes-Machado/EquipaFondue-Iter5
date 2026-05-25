@@ -111,7 +111,7 @@ function renderHome() {
           ? `<button class="btn btn-primary" data-nav="/plans">Ver Planos →</button>
              <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>`
           : `<button class="btn btn-primary" data-nav="/register">Registar-se →</button>
-             <button class="btn btn-ghost" data-nav="/login">Já tenho conta</button>`}
+             <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>`}
       </div>
       <div class="hero-trust">
         <span class="hero-trust-item">✅ Dois planos disponíveis</span>
@@ -137,7 +137,7 @@ function renderHome() {
         <p>Dois planos para se adaptar às suas necessidades.</p>
       </div>
       <div class="plans-grid">
-        <div class="plan-card" data-nav="${loggedIn?'/plans':'/register'}">
+        <div class="plan-card" data-nav="/plans">
           <div class="plan-head"><h3>Plano Parcial</h3>
             <div class="plan-price-row"><span class="plan-price">€600</span><span class="plan-period">/ano</span></div>
           </div>
@@ -147,7 +147,7 @@ function renderHome() {
             <div class="plan-feature"><span>✓</span> Entrega e instalação</div>
           </div>
         </div>
-        <div class="plan-card" style="border-color:var(--teal)" data-nav="${loggedIn?'/plans':'/register'}">
+        <div class="plan-card" style="border-color:var(--teal)" data-nav="/plans">
           <div class="plan-head" style="position:relative">
             <div style="position:absolute;top:10px;right:10px;background:var(--teal);color:white;font-size:.7rem;padding:2px 10px;border-radius:999px">Mais popular</div>
             <h3>Plano Completo</h3>
@@ -161,9 +161,7 @@ function renderHome() {
         </div>
       </div>
       <div style="text-align:center;margin-top:2rem">
-        <button class="btn btn-primary" data-nav="${loggedIn?'/plans':'/register'}">
-          ${loggedIn?'Escolher plano →':'Registar-se e subscrever →'}
-        </button>
+        <button class="btn btn-primary" data-nav="/plans">Ver todos os planos →</button>
       </div>
     </div>
   </section>
@@ -189,7 +187,7 @@ function renderHome() {
           <h2 style="margin-bottom:4px">Eletrodomésticos disponíveis</h2>
           <p class="text-gray" style="font-size:.9rem">Marcas premium, tudo incluído na subscrição.</p>
         </div>
-        <button class="text-teal fw-600 text-sm" data-nav="${loggedIn?'/appliances':'/register'}"
+        <button class="text-teal fw-600 text-sm" data-nav="/appliances"
           style="background:none;border:none;cursor:pointer">Ver todos →</button>
       </div>
       <div class="app-grid">${APPLIANCES.slice(0,6).map(a=>appCard(a)).join('')}</div>
@@ -210,6 +208,7 @@ function renderHome() {
 
 // ─── PLANS ────────────────────────────────────────────────────────────────────
 function renderPlans() {
+  const loggedIn = isLoggedIn();
   const current = getCurrentPlan();
   document.getElementById('page-plans').innerHTML = `
   <div class="ph"><div class="ph-inner">
@@ -219,7 +218,7 @@ function renderPlans() {
   <div class="pc">
     <div class="plans-grid" style="max-width:700px;margin:0 auto 2.5rem">
       ${Object.values(PLANS).map(plan=>`
-        <div class="plan-card ${current?.id===plan.id?'selected':''}" onclick="choosePlan('${plan.id}')">
+        <div class="plan-card ${current?.id===plan.id?'selected':''}" onclick="${loggedIn?`choosePlan('${plan.id}')`:`navigate('/register')`}">
           <div class="plan-head" style="position:relative">
             ${plan.id==='completo'?'<div style="position:absolute;top:10px;right:10px;background:var(--teal);color:white;font-size:.7rem;padding:2px 10px;border-radius:999px">Mais popular</div>':''}
             <h3>${plan.name}</h3>
@@ -239,11 +238,22 @@ function renderPlans() {
           </div>
         </div>`).join('')}
     </div>
-    ${current ? `
-    <div style="text-align:center">
-      <p class="text-gray text-sm mb-4">Plano selecionado: <strong class="text-navy">${current.name}</strong> — ${current.maxAppliances} eletrodomésticos · €${current.price}/ano</p>
-      <button class="btn btn-primary" data-nav="/appliances">Escolher eletrodomésticos →</button>
-    </div>` : '<div style="text-align:center"><p class="text-gray text-sm">Clique num plano para o selecionar.</p></div>'}
+    ${loggedIn
+      ? (current ? `
+        <div style="text-align:center">
+          <p class="text-gray text-sm mb-4">Plano selecionado: <strong class="text-navy">${current.name}</strong> — ${current.maxAppliances} eletrodomésticos · €${current.price}/ano</p>
+          <button class="btn btn-primary" data-nav="/appliances">Escolher eletrodomésticos →</button>
+        </div>`
+        : '<div style="text-align:center"><p class="text-gray text-sm">Clique num plano para o selecionar.</p></div>')
+      : `<div style="text-align:center">
+          <div class="info-banner info-blue" style="max-width:480px;margin:0 auto 1.5rem">
+            ℹ️ Para subscrever um plano precisa de <strong>criar uma conta gratuita</strong>.
+          </div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" data-nav="/register">Criar conta →</button>
+            <button class="btn btn-outline" data-nav="/login">Já tenho conta</button>
+          </div>
+        </div>`}
     <div style="max-width:700px;margin:3rem auto 0">
       <div class="card" style="overflow:hidden">
         <table style="width:100%;border-collapse:collapse;font-size:.875rem">
@@ -279,6 +289,7 @@ function choosePlan(planId) { selectPlan(planId); renderPlans(); }
 let appFilter = 'Todos', appSearch = '';
 
 function renderAppliances() {
+  const loggedIn = isLoggedIn();
   const plan = getCurrentPlan();
   const selected = getSelectedAppliances();
   const cats = ['Todos', ...new Set(APPLIANCES.map(a=>a.category))];
@@ -293,19 +304,26 @@ function renderAppliances() {
   document.getElementById('page-appliances').innerHTML = `
   <div class="ph"><div class="ph-inner">
     <h1>Catálogo de Eletrodomésticos</h1>
-    ${!plan
-      ? `<div class="info-banner info-amber mt-3" style="max-width:520px">
-           ⚠️ Ainda não escolheu um plano.
-           <button data-nav="/plans" style="background:none;border:none;cursor:pointer;color:#92400e;font-weight:600;text-decoration:underline">Escolher plano →</button>
+    ${!loggedIn
+      ? `<div class="info-banner info-blue mt-3" style="max-width:520px">
+           ℹ️ Está a navegar como visitante.
+           <button data-nav="/register" style="background:none;border:none;cursor:pointer;color:#1d4ed8;font-weight:600;text-decoration:underline">Crie uma conta</button>
+           para subscrever um plano e alugar equipamentos.
          </div>`
-      : `<p class="text-gray" style="font-size:.9rem;margin-top:4px">${plan.name} — até <strong>${plan.maxAppliances} eletrodomésticos</strong></p>
-         <div class="prog-wrap">
-           <div class="prog-bar-track">
-             <div class="prog-bar-fill" style="width:${(selected.length/plan.maxAppliances)*100}%"></div>
-           </div>
-           <span class="text-sm text-gray">${selected.length}/${plan.maxAppliances} selecionados</span>
-           ${selected.length>0?`<button class="btn btn-primary" data-nav="/subscription" style="padding:8px 18px;font-size:.82rem">Ver subscrição →</button>`:''}
-         </div>`}
+      : (!plan
+          ? `<div class="info-banner info-amber mt-3" style="max-width:520px">
+               ⚠️ Ainda não escolheu um plano.
+               <button data-nav="/plans" style="background:none;border:none;cursor:pointer;color:#92400e;font-weight:600;text-decoration:underline">Escolher plano →</button>
+             </div>`
+          : `<p class="text-gray" style="font-size:.9rem;margin-top:4px">${plan.name} — até <strong>${plan.maxAppliances} eletrodomésticos</strong></p>
+             <div class="prog-wrap">
+               <div class="prog-bar-track">
+                 <div class="prog-bar-fill" style="width:${(selected.length/plan.maxAppliances)*100}%"></div>
+               </div>
+               <span class="text-sm text-gray">${selected.length}/${plan.maxAppliances} selecionados</span>
+               ${selected.length>0?`<button class="btn btn-primary" data-nav="/subscription" style="padding:8px 18px;font-size:.82rem">Ver subscrição →</button>`:''}
+             </div>`)
+    }
   </div></div>
   <div class="pc">
     <div class="filter-bar">
@@ -323,7 +341,8 @@ function renderAppliances() {
         : '<div style="grid-column:1/-1;text-align:center;padding:4rem 0"><p style="font-size:2.5rem">🔍</p><p class="text-gray mt-3">Nenhum resultado encontrado.</p></div>'}
     </div>
   </div>
-  <div class="sticky-bar ${selected.length>0&&plan?'show':''}" id="sticky-bar">
+  ${loggedIn && selected.length>0 && plan ? `
+  <div class="sticky-bar show" id="sticky-bar">
     <div class="sticky-inner">
       <div>
         <p class="text-navy text-sm fw-600">${selected.length} eletrodoméstico${selected.length!==1?'s':''} selecionado${selected.length!==1?'s':''}</p>
@@ -331,7 +350,7 @@ function renderAppliances() {
       </div>
       <button class="btn btn-primary" data-nav="/subscription">Ver subscrição →</button>
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 
 function onSearch(val) {
