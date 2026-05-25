@@ -127,7 +127,10 @@ button{font-family:'DM Sans',sans-serif}
 .btn-add.is-added{background:var(--teal-l);color:var(--teal-d);border:1px solid var(--teal-m)}
 .btn-add.is-added:hover{background:#fee2e2;color:var(--red);border-color:#fca5a5}
 .btn-add.is-full{background:var(--gray-100);color:var(--gray-400);cursor:not-allowed}
-.btn-add.no-plan{background:var(--gray-100);color:var(--gray-400);cursor:not-allowed}
+.btn-add.no-plan{background:var(--gray-100);color:var(--gray-600);cursor:pointer}
+.btn-add.no-plan:hover{background:var(--gray-200);color:var(--navy)}
+.btn-add.login-needed{background:var(--navy);color:white}
+.btn-add.login-needed:hover{background:#334155}
 
 /* SEARCH/FILTER */
 .filter-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center}

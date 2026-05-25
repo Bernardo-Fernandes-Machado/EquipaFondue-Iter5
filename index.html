@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HomeLoop — Eletrodomésticos como Serviço</title>
-  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/style.css?v=3"/>
   <style>
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
     .nb-cta{background:var(--teal);color:white;padding:8px 16px;border-radius:10px;font-size:.875rem;cursor:pointer;border:none;transition:background .15s}
@@ -23,13 +23,14 @@
   <div id="page-dashboard"    class="page"></div>
   <div id="footer-root"></div>
 
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/pages.js"></script>
+  <script src="js/data.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
+  <script src="js/pages.js?v=3"></script>
   <script>
     document.getElementById('footer-root').innerHTML = renderFooter();
     updateNavbar();
-    renderPage(location.pathname || '/');
+    renderPage(getRoute());
   </script>
 </body>
 </html>
+
