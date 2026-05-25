@@ -1,32 +1,28 @@
 // ─── ROUTER ──────────────────────────────────────────────────────────────────
-const PRIVATE_ROUTES = ['/dashboard', '/profile', '/perfil', '/maintenance', '/manutencoes', '/manutenções'];
-
-function getRoute() {
-  const hashRoute = location.hash.replace(/^#/, '');
-  return hashRoute || '/';
-}
-
 function navigate(path) {
-  if (PRIVATE_ROUTES.includes(path) && !isLoggedIn()) {
-    location.hash = '/login';
+  const pub = ['/', '/login', '/register'];
+  if (!pub.includes(path) && !isLoggedIn()) {
+    history.pushState(null, '', '/login');
     renderPage('/login'); return;
   }
-  location.hash = path;
+  history.pushState(null, '', path);
   renderPage(path);
   window.scrollTo(0, 0);
 }
 
 function renderPage(path) {
-  path = path || getRoute();
-  if (PRIVATE_ROUTES.includes(path) && !isLoggedIn()) {
+  const pub = ['/', '/login', '/register'];
+  if (!pub.includes(path) && !isLoggedIn()) {
     path = '/login';
-    location.hash = '/login';
+    history.replaceState(null, '', '/login');
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const map = {
     '/':'page-home', '/login':'page-login', '/register':'page-register',
     '/plans':'page-plans', '/appliances':'page-appliances',
-    '/subscription':'page-subscription', '/delivery':'page-delivery',
+    '/subscription':'page-subscription',
+    '/payment':'page-payment',
+    '/delivery':'page-delivery',
     '/dashboard':'page-dashboard',
   };
   const el = document.getElementById(map[path] || 'page-home');
@@ -39,12 +35,13 @@ function renderPage(path) {
     case '/plans':        renderPlans();        break;
     case '/appliances':   renderAppliances();   break;
     case '/subscription': renderSubscription(); break;
+    case '/payment':      renderPayment();      break;
     case '/delivery':     renderDelivery();     break;
     case '/dashboard':    renderDashboard();    break;
   }
 }
 
-window.addEventListener('hashchange', () => renderPage(getRoute()));
+window.addEventListener('popstate', () => renderPage(location.pathname));
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-nav]');
   if (a) { e.preventDefault(); navigate(a.dataset.nav); }
@@ -56,7 +53,7 @@ function updateNavbar() {
   if (!root) return;
   const loggedIn = isLoggedIn();
   const user = getCurrentUser();
-  const path = getRoute();
+  const path = location.pathname;
   const selected = getSelectedAppliances();
 
   const lnk = (label, to, extra='') =>
@@ -68,9 +65,11 @@ function updateNavbar() {
       <div class="nb-logo" data-nav="/">Home<span>Loop</span></div>
       <div class="nb-links">
         ${lnk('Início','/')}
-        ${lnk('Catálogo','/appliances')}
-        ${lnk('Planos','/plans')}
-        ${loggedIn ? lnk('Subscrição','/subscription') : ''}
+        ${loggedIn ? `
+          ${lnk('Catálogo','/appliances')}
+          ${lnk('Planos','/plans')}
+          ${lnk('Subscrição','/subscription')}
+        ` : ''}
       </div>
       <div class="nb-right">
         ${loggedIn ? `
@@ -89,14 +88,15 @@ function updateNavbar() {
       <button class="nb-burger" onclick="toggleMobile()">☰</button>
     </div>
     <div class="nb-mobile" id="nb-mobile">
-      <button data-nav="/">Início</button>
-      <button data-nav="/appliances">Catálogo</button>
-      <button data-nav="/plans">Planos</button>
       ${loggedIn ? `
+        <button data-nav="/">Início</button>
+        <button data-nav="/appliances">Catálogo</button>
+        <button data-nav="/plans">Planos</button>
         <button data-nav="/subscription">Subscrição</button>
         <button data-nav="/dashboard">O Meu Painel</button>
         <button onclick="handleLogout()" style="color:var(--red)">Sair</button>
       ` : `
+        <button data-nav="/">Início</button>
         <button data-nav="/login">Entrar</button>
         <button data-nav="/register">Registar-se</button>
       `}
@@ -156,8 +156,7 @@ function appCard(a, showCancel = false) {
   const icon = CATEGORY_ICONS[a.category] || '📦';
 
   let btnClass, btnLabel;
-  if (!isLoggedIn()) { btnClass='login-needed'; btnLabel='Iniciar sessão para subscrever'; }
-  else if (!plan)  { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
+  if (!plan)       { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
   else if (sel)    { btnClass='is-added'; btnLabel='✓ Adicionado — clique para remover'; }
   else if (full)   { btnClass='is-full';  btnLabel=`Plano completo (${plan.maxAppliances}/${plan.maxAppliances})`; }
   else             { btnClass='can-add';  btnLabel='Adicionar à subscrição'; }
@@ -181,7 +180,7 @@ function appCard(a, showCancel = false) {
           ✕ Anular aluguer
         </button>` : `
         <button class="btn-add ${btnClass}" onclick="toggleApp('${a.id}')"
-          ${btnClass==='is-full'?'disabled':''}>
+          ${btnClass==='is-full'||btnClass==='no-plan'?'disabled':''}>
           ${btnLabel}
         </button>`}
     </div>
@@ -189,11 +188,10 @@ function appCard(a, showCancel = false) {
 }
 
 function toggleApp(id) {
-  if (!isLoggedIn()) { navigate('/login'); return; }
   if (!getCurrentPlan()) { navigate('/plans'); return; }
   if (isSelected(id)) removeAppliance(id);
   else addAppliance(id);
-  renderPage(getRoute());
+  renderPage(location.pathname);
 }
 
 function handleCancelAppliance(id) {
@@ -201,7 +199,7 @@ function handleCancelAppliance(id) {
   if (!a) return;
   if (confirm(`Tem a certeza que quer anular o aluguer de "${a.name}"? Esta ação remove o equipamento do seu plano.`)) {
     cancelAppliance(id);
-    renderPage(getRoute());
+    renderPage(location.pathname);
   }
 }
 
