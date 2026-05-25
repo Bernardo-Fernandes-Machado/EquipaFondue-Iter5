@@ -148,11 +148,25 @@ function getSelectedAppliances() {
 function addAppliance(id) {
   const state = getState();
   const plan = getCurrentPlan();
-  if (!plan || state.selectedIds.length >= plan.maxAppliances) return false;
+  
+  // ✅ VALIDAÇÃO: Verificar se há plano selecionado
+  if (!plan) return false;
+  
+  // ✅ VALIDAÇÃO: Verificar se o plano está cheio
+  if (state.selectedIds.length >= plan.maxAppliances) {
+    console.warn(`❌ Plano cheio: ${plan.maxAppliances}/${plan.maxAppliances} eletrodomésticos`);
+    return false;
+  }
+  
+  // ✅ VALIDAÇÃO: Verificar se já está selecionado
   if (state.selectedIds.includes(id)) return false;
+  
+  // Adicionar o eletrodoméstico
   state.selectedIds.push(id);
-  // se estava cancelado, remove o cancel
-  state.cancelledIds = (state.cancelledIds||[]).filter(i => i !== id);
+  
+  // Se estava cancelado, remove o cancel
+  state.cancelledIds = (state.cancelledIds || []).filter(i => i !== id);
+  
   saveState(state);
   return true;
 }
@@ -163,31 +177,88 @@ function removeAppliance(id) {
   saveState(state);
 }
 
-// Anular aluguer de um eletrodoméstico específico
+// ✅ Anular aluguer de um eletrodoméstico específico
 function cancelAppliance(id) {
   const state = getState();
+  
+  // Validação: Verificar se tem o plano cheio ANTES de anular
+  const plan = getCurrentPlan();
+  const selected = getState().selectedIds;
+  
+  if (plan && selected.length === plan.maxAppliances) {
+    console.warn(`⚠️ ATENÇÃO: Está a anular um equipamento de um plano cheio (${selected.length}/${plan.maxAppliances})`);
+  }
+  
+  // Remover da lista de selecionados
   state.selectedIds = state.selectedIds.filter(i => i !== id);
+  
+  // Adicionar à lista de cancelados
   if (!state.cancelledIds) state.cancelledIds = [];
   if (!state.cancelledIds.includes(id)) state.cancelledIds.push(id);
+  
   saveState(state);
 }
 
 function isSelected(id) { return getState().selectedIds.includes(id); }
-function isCancelled(id) { return (getState().cancelledIds||[]).includes(id); }
+function isCancelled(id) { return (getState().cancelledIds || []).includes(id); }
 
 // ─── SUBSCRIPTION ────────────────────────────────────────────────────────────
 function confirmSubscription() {
   const state = getState();
+  const plan = getCurrentPlan();
+  const selected = getState().selectedIds;
+  
+  // ✅ VALIDAÇÃO: Verificar limites antes de confirmar
+  if (!plan) {
+    console.error('❌ Erro: Nenhum plano selecionado');
+    return false;
+  }
+  
+  if (selected.length === 0) {
+    console.error('❌ Erro: Nenhum eletrodoméstico selecionado');
+    return false;
+  }
+  
+  if (selected.length > plan.maxAppliances) {
+    console.error(`❌ Erro: Tem ${selected.length} eletrodomésticos, mas o plano permite apenas ${plan.maxAppliances}`);
+    return false;
+  }
+  
   state.subscribed = true;
   saveState(state);
+  return true;
 }
 
 // ─── DELIVERY ────────────────────────────────────────────────────────────────
 function saveDelivery(delivery) {
   const state = getState();
+  const plan = getCurrentPlan();
+  const selected = getState().selectedIds;
+  
+  // ✅ VALIDAÇÃO CRÍTICA: Impedir agendamento se plano está sobrecarregado
+  if (!plan) {
+    console.error('❌ Erro: Nenhum plano selecionado. Não é possível agendar entrega.');
+    return false;
+  }
+  
+  if (selected.length > plan.maxAppliances) {
+    console.error(`❌ Erro Crítico: Tem ${selected.length} eletrodomésticos, mas o plano permite apenas ${plan.maxAppliances}. Remova equipamentos ou mude de plano antes de agendar.`);
+    alert(`❌ ERRO: Tem ${selected.length} eletrodomésticos, mas o plano permite apenas ${plan.maxAppliances}.\n\nRemova alguns equipamentos ou mude de plano.`);
+    return false;
+  }
+  
+  if (selected.length === 0) {
+    console.error('❌ Erro: Nenhum eletrodoméstico selecionado');
+    return false;
+  }
+  
+  // Entrega validada e confirmada
   if (!state.deliveries) state.deliveries = [];
   state.deliveries.push(delivery);
   saveState(state);
+  
+  console.log(`✅ Entrega agendada com sucesso: ${delivery.date} - ${delivery.slot}`);
+  return true;
 }
 
 function getDeliveries() {
