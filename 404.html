@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <title>HomeLoop — A redirecionar...</title>
+  <script>
+    // GitHub Pages serve este ficheiro para qualquer rota não reconhecida.
+    // Converte o pathname em hash e redireciona para index.html,
+    // permitindo que o router hash-based do app.js trate a rota corretamente.
+    (function () {
+      var path = window.location.pathname;
+      var search = window.location.search;
+      // Remove o prefixo do repositório se existir (para GitHub Pages com subpath)
+      var repoName = '/EquipaFondue-Iter5';
+      if (path.startsWith(repoName)) {
+        path = path.slice(repoName.length) || '/';
+      }
+      var hash = path + (search ? search : '');
+      var redirect = window.location.origin + repoName + '/index.html#' + hash;
+      window.location.replace(redirect);
+    })();
+  </script>
+</head>
+<body>
+  <p style="font-family:sans-serif;text-align:center;margin-top:4rem;color:#64748b">
+    A redirecionar...
+  </p>
+</body>
+</html>
