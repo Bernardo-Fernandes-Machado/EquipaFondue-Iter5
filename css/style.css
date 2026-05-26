@@ -241,22 +241,118 @@ textarea{resize:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .pulse{animation:pulse 2s infinite}
 
-/* RESPONSIVE */
+/* ─── PAYMENT PAGE ─── */
+.pay-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
+.pay-methods{display:flex;flex-direction:column;gap:10px}
+.pay-method{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--gray-200);border-radius:14px;background:white;cursor:pointer;transition:all .15s;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.pay-method:hover{border-color:var(--teal);background:var(--teal-l)}
+.pay-method.selected{border-color:var(--teal);background:var(--teal-l);box-shadow:0 0 0 3px rgba(20,184,166,.15)}
+.pay-icon{font-size:1.6rem;width:42px;height:42px;background:var(--gray-50);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pay-method.selected .pay-icon{background:white}
+.pay-info{flex:1;min-width:0}
+.pay-name{font-weight:600;color:var(--navy);font-size:.9rem;margin-bottom:2px}
+.pay-desc{color:var(--gray-500);font-size:.78rem}
+.pay-check{color:var(--teal);font-size:1.1rem;font-weight:700;flex-shrink:0}
+
+/* Item pick (delivery item selector) */
+.item-pick{display:flex;align-items:center;gap:12px;padding:10px 12px;border:2px solid var(--gray-200);border-radius:12px;background:white;cursor:pointer;transition:all .15s}
+.item-pick:hover{border-color:var(--teal);background:var(--teal-l)}
+.item-pick.checked{border-color:var(--teal);background:var(--teal-l)}
+
+/* ─── RESPONSIVE ─── */
 @media(max-width:1024px){
   .benefit-grid{grid-template-columns:repeat(2,1fr)}
   .app-grid{grid-template-columns:repeat(2,1fr)}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .sub-grid,.del-grid{grid-template-columns:1fr}
+  .sub-grid,.del-grid,.pay-grid{grid-template-columns:1fr}
   .plans-grid{grid-template-columns:1fr 1fr;max-width:100%}
+  /* nas grids 1col, remove sticky */
+  .pay-grid > div .card[style*="sticky"],
+  .del-grid > div .card[style*="sticky"]{position:static !important}
 }
 @media(max-width:768px){
-  .nb-links,.nb-right{display:none}
-  .nb-burger{display:flex}
+  .nb-links,.nb-right{display:none !important}
+  .nb-burger{display:flex !important}
+  .nb-inner{padding:0 1rem}
+  .nb-logo{font-size:1.2rem}
   .app-grid{grid-template-columns:1fr}
-  .stats-inner{grid-template-columns:repeat(2,1fr)}
+  .stats-inner{grid-template-columns:repeat(2,1fr);padding:1.5rem 1rem}
   .benefit-grid{grid-template-columns:1fr}
   .plans-grid{grid-template-columns:1fr}
-  .hero{padding:3.5rem 1.5rem}
+  .hero{padding:3rem 1.25rem}
+  .hero-desc{font-size:.95rem}
   .ts-grid{grid-template-columns:1fr}
   .slot-row{grid-template-columns:repeat(4,1fr)}
+  /* page header padding */
+  .ph-inner{padding:1.75rem 1rem}
+  .ph h1{font-size:1.5rem}
+  .ph p{font-size:.85rem}
+  .pc{padding:1.5rem 1rem}
+  .section{padding:3rem 1rem}
+  .sec-hdr{margin-bottom:2rem}
+  /* dashboard */
+  .dash-hero{padding:1.75rem 1rem}
+  .dash-hero h1{font-size:1.4rem !important}
+  .kpi-grid{gap:8px}
+  .kpi{padding:.75rem}
+  .kpi-val{font-size:1rem}
+  /* botões da navbar (cart) */
+  .nb-burger{padding:6px}
+  /* cal */
+  .cal-day{font-size:.75rem}
+  .cal-dn{font-size:.65rem;padding:5px 0}
+  /* filter bar wraps */
+  .filter-bar{flex-direction:column;align-items:stretch}
+  .search-box{max-width:100%}
+  .filter-pills{overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+  .fpill{flex-shrink:0}
+  /* sticky bar */
+  .sticky-inner{padding:10px 1rem;gap:8px}
+  .sticky-inner > div{min-width:0;flex:1}
+  .sticky-inner button{flex-shrink:0;padding:10px 14px;font-size:.8rem}
+  /* dashboard dois cols → um */
+  .pc > div[style*="grid-template-columns:1fr 300px"]{
+    grid-template-columns:1fr !important
+  }
+  /* subscription right col → empilhado */
+  .pc > div[style*="grid-template-columns:1fr 320px"],
+  .pc > div[style*="grid-template-columns:1fr 360px"]{
+    grid-template-columns:1fr !important
+  }
+  /* cards */
+  .card{border-radius:14px}
+  .p-6{padding:16px}
+  .p-5{padding:14px}
+  /* footer */
+  footer .footer-inner > div:first-child{grid-template-columns:1fr 1fr !important;gap:1.5rem !important}
+  footer .footer-bottom{flex-direction:column;text-align:center}
+  /* plan card head */
+  .plan-head{padding:1.2rem}
+  .plan-body{padding:1rem}
+  .plan-price{font-size:1.8rem}
+  /* hero buttons stack */
+  .hero-btns{flex-direction:column;align-items:stretch}
+  .hero-btns .btn{width:100%;justify-content:center}
+  .hero-trust{gap:.875rem}
+  .hero-trust-item{font-size:.78rem}
+  /* login box */
+  .login-box{padding:1.75rem;border-radius:18px}
+  .success-box{padding:1.75rem;border-radius:18px}
+  /* slot row icons */
+  .slot{font-size:.8rem;height:32px}
+  /* payment method on mobile */
+  .pay-method{padding:12px}
+  .pay-icon{width:36px;height:36px;font-size:1.3rem}
+  .pay-name{font-size:.85rem}
+  .pay-desc{font-size:.72rem}
+}
+@media(max-width:480px){
+  .stats-inner{grid-template-columns:1fr 1fr;padding:1.25rem .75rem}
+  .stat-val{font-size:1.15rem}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  footer .footer-inner > div:first-child{grid-template-columns:1fr !important}
+  .filter-pills{margin:0 -1rem;padding:0 1rem 6px}
+  /* hero badge fica pequeno */
+  .hero-badge{font-size:.72rem;padding:4px 10px}
+  .hero h1{font-size:2rem;line-height:1.15}
 }

@@ -20,7 +20,9 @@ function renderPage(path) {
   const map = {
     '/':'page-home', '/login':'page-login', '/register':'page-register',
     '/plans':'page-plans', '/appliances':'page-appliances',
-    '/subscription':'page-subscription', '/delivery':'page-delivery',
+    '/subscription':'page-subscription',
+    '/payment':'page-payment',
+    '/delivery':'page-delivery',
     '/dashboard':'page-dashboard',
   };
   const el = document.getElementById(map[path] || 'page-home');
@@ -33,6 +35,7 @@ function renderPage(path) {
     case '/plans':        renderPlans();        break;
     case '/appliances':   renderAppliances();   break;
     case '/subscription': renderSubscription(); break;
+    case '/payment':      renderPayment();      break;
     case '/delivery':     renderDelivery();     break;
     case '/dashboard':    renderDashboard();    break;
   }
@@ -199,3 +202,4 @@ function handleCancelAppliance(id) {
     renderPage(location.pathname);
   }
 }
+
