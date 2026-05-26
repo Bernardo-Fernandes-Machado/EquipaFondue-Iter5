@@ -30,7 +30,7 @@
   <script>
     document.getElementById('footer-root').innerHTML = renderFooter();
     updateNavbar();
-    renderPage(getCurrentPath());
+    renderPage(location.pathname || '/');
   </script>
 </body>
 </html>
