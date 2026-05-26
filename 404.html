@@ -2,35 +2,28 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HomeLoop — Eletrodomésticos como Serviço</title>
-  <link rel="stylesheet" href="css/style.css"/>
-  <style>
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    .nb-cta{background:var(--teal);color:white;padding:8px 16px;border-radius:10px;font-size:.875rem;cursor:pointer;border:none;transition:background .15s}
-    .nb-cta:hover{background:var(--teal-d)}
-  </style>
+  <title>HomeLoop — A redirecionar...</title>
+  <script>
+    // GitHub Pages serve este ficheiro para qualquer rota não reconhecida.
+    // Converte o pathname em hash e redireciona para index.html,
+    // permitindo que o router hash-based do app.js trate a rota corretamente.
+    (function () {
+      var path = window.location.pathname;
+      var search = window.location.search;
+      // Remove o prefixo do repositório se existir (para GitHub Pages com subpath)
+      var repoName = '/EquipaFondue-Iter5';
+      if (path.startsWith(repoName)) {
+        path = path.slice(repoName.length) || '/';
+      }
+      var hash = path + (search ? search : '');
+      var redirect = window.location.origin + repoName + '/index.html#' + hash;
+      window.location.replace(redirect);
+    })();
+  </script>
 </head>
 <body>
-  <div id="navbar-root"></div>
-  <div id="page-home"         class="page"></div>
-  <div id="page-login"        class="page"></div>
-  <div id="page-register"     class="page"></div>
-  <div id="page-plans"        class="page"></div>
-  <div id="page-appliances"   class="page"></div>
-  <div id="page-subscription" class="page"></div>
-  <div id="page-payment"      class="page"></div>
-  <div id="page-delivery"     class="page"></div>
-  <div id="page-dashboard"    class="page"></div>
-  <div id="footer-root"></div>
-
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/pages.js"></script>
-  <script>
-    document.getElementById('footer-root').innerHTML = renderFooter();
-    updateNavbar();
-    renderPage(location.pathname || '/');
-  </script>
+  <p style="font-family:sans-serif;text-align:center;margin-top:4rem;color:#64748b">
+    A redirecionar...
+  </p>
 </body>
 </html>
