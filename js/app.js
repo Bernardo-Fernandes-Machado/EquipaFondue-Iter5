@@ -1,20 +1,25 @@
-// ─── ROUTER ──────────────────────────────────────────────────────────────────
+// ─── ROUTER (hash-based para funcionar em GitHub Pages e subpaths) ──────────
+function getCurrentPath() {
+  // Tira o '#' inicial e devolve a rota. Default: '/'
+  const h = location.hash.replace(/^#/, '');
+  return h || '/';
+}
+
 function navigate(path) {
   const pub = ['/', '/login', '/register'];
   if (!pub.includes(path) && !isLoggedIn()) {
-    history.pushState(null, '', '/login');
-    renderPage('/login'); return;
+    location.hash = '/login';
+    return;
   }
-  history.pushState(null, '', path);
-  renderPage(path);
-  window.scrollTo(0, 0);
+  location.hash = path;
 }
 
 function renderPage(path) {
   const pub = ['/', '/login', '/register'];
   if (!pub.includes(path) && !isLoggedIn()) {
     path = '/login';
-    history.replaceState(null, '', '/login');
+    location.hash = '/login';
+    return;
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const map = {
@@ -39,9 +44,10 @@ function renderPage(path) {
     case '/delivery':     renderDelivery();     break;
     case '/dashboard':    renderDashboard();    break;
   }
+  window.scrollTo(0, 0);
 }
 
-window.addEventListener('popstate', () => renderPage(location.pathname));
+window.addEventListener('hashchange', () => renderPage(getCurrentPath()));
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-nav]');
   if (a) { e.preventDefault(); navigate(a.dataset.nav); }
@@ -53,7 +59,7 @@ function updateNavbar() {
   if (!root) return;
   const loggedIn = isLoggedIn();
   const user = getCurrentUser();
-  const path = location.pathname;
+  const path = getCurrentPath();
   const selected = getSelectedAppliances();
 
   const lnk = (label, to, extra='') =>
@@ -191,7 +197,7 @@ function toggleApp(id) {
   if (!getCurrentPlan()) { navigate('/plans'); return; }
   if (isSelected(id)) removeAppliance(id);
   else addAppliance(id);
-  renderPage(location.pathname);
+  renderPage(getCurrentPath());
 }
 
 function handleCancelAppliance(id) {
@@ -199,7 +205,6 @@ function handleCancelAppliance(id) {
   if (!a) return;
   if (confirm(`Tem a certeza que quer anular o aluguer de "${a.name}"? Esta ação remove o equipamento do seu plano.`)) {
     cancelAppliance(id);
-    renderPage(location.pathname);
+    renderPage(getCurrentPath());
   }
 }
-

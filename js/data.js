@@ -188,6 +188,10 @@ state.subscribed = true;
 saveState(state);
 }
 
+function isSubscribed() {
+return !!getState().subscribed;
+}
+
 // ─── DELIVERY ────────────────────────────────────────────────────────────────
 function saveDelivery(delivery) {
 const state = getState();

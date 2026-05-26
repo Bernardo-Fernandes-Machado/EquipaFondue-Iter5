@@ -369,11 +369,15 @@ function renderSubscription() {
 
   const remaining = plan.maxAppliances - selected.length;
   const canConfirm = selected.length > 0;
+  const alreadySubscribed = isSubscribed();
 
   el.innerHTML = `
   <div class="ph"><div class="ph-inner">
-    <h1>A Sua Subscrição</h1>
-    <p>Reveja o seu plano e confirme a subscrição anual.</p>
+    <h1>${alreadySubscribed ? 'O Meu Plano' : 'A Sua Subscrição'}</h1>
+    <p>${alreadySubscribed
+      ? 'Subscrição ativa. Gira os eletrodomésticos do seu plano e agende entregas livremente.'
+      : 'Reveja o seu plano e confirme a subscrição anual.'}</p>
+    ${alreadySubscribed ? '<div class="info-banner info-teal mt-3" style="max-width:520px">✓ Subscrição ativa — pode agendar entregas sem pagamentos adicionais.</div>' : ''}
   </div></div>
   <div class="pc">
     <div class="sub-grid">
@@ -446,14 +450,21 @@ function renderSubscription() {
               <div class="flex justify-between text-sm mb-2"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${selected.length}/${plan.maxAppliances}</span></div>
               <div class="flex justify-between text-sm mb-3"><span class="text-gray">Plano</span><span class="text-navy">${plan.name}</span></div>
               <div class="flex justify-between" style="font-size:1rem;border-top:1px solid var(--gray-100);padding-top:10px">
-                <span class="text-navy fw-600">Total hoje</span>
+                <span class="text-navy fw-600">${alreadySubscribed ? 'Já pago' : 'Total hoje'}</span>
                 <span class="text-teal fw-600">€${plan.price.toLocaleString('pt-PT')}</span>
               </div>
             </div>
-            <button onclick="handleConfirmSub()" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
-              Confirmar Subscrição →
-            </button>
-            ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Selecione pelo menos 1 eletrodoméstico</p>':''}
+            ${alreadySubscribed ? `
+              <button onclick="navigate('/delivery')" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
+                🚚 Agendar Entrega →
+              </button>
+              ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Adicione pelo menos 1 eletrodoméstico</p>':''}
+            ` : `
+              <button onclick="handleConfirmSub()" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
+                Confirmar Subscrição →
+              </button>
+              ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Selecione pelo menos 1 eletrodoméstico</p>':''}
+            `}
           </div>
         </div>
         <div class="info-banner info-teal mt-3">
@@ -467,14 +478,221 @@ function renderSubscription() {
 
 function handleConfirmSub() {
   if (getSelectedAppliances().length===0) return;
-  confirmSubscription();
-  navigate('/delivery');
+  // Se já está subscrito, não passa por pagamento — vai direto agendar entrega
+  if (isSubscribed()) {
+    navigate('/delivery');
+  } else {
+    navigate('/payment');
+  }
+}
+
+// ─── PAYMENT ──────────────────────────────────────────────────────────────────
+let payState = { method: 'mbway', processing: false };
+
+function renderPayment() {
+  const plan = getCurrentPlan();
+  const selected = getSelectedAppliances();
+  const el = document.getElementById('page-payment');
+
+  // Se já está subscrito, não há nada a pagar — redirecionar para dashboard
+  if (isSubscribed()) {
+    el.innerHTML = `<div class="success-wrap"><div class="success-box">
+      <div class="success-icon">✓</div>
+      <h2 style="margin-bottom:12px">Subscrição Ativa</h2>
+      <p class="text-gray mb-6">Já tem uma subscrição ativa. Pode agendar entregas livremente sem pagar de novo.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary w-full" data-nav="/delivery">🚚 Agendar Entrega</button>
+        <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
+      </div>
+    </div></div>`;
+    return;
+  }
+
+  if (!plan || selected.length === 0) {
+    el.innerHTML = `<div class="success-wrap"><div class="success-box">
+      <div class="success-icon">⚠️</div>
+      <h2 style="margin-bottom:12px">Sem subscrição pendente</h2>
+      <p class="text-gray mb-6">Volte ao catálogo para escolher eletrodomésticos.</p>
+      <button class="btn btn-primary w-full" data-nav="/plans">Escolher Plano →</button>
+    </div></div>`;
+    return;
+  }
+
+  const methods = [
+    { id:'mbway',    name:'MB Way',  icon:'📱', desc:'Pagamento rápido via telemóvel' },
+    { id:'stripe',   name:'Stripe',  icon:'💳', desc:'Cartão de crédito/débito' },
+    { id:'paypal',   name:'PayPal',  icon:'🅿️', desc:'Conta PayPal ou cartão' },
+    { id:'mb',       name:'Multibanco', icon:'🏧', desc:'Referência multibanco' },
+  ];
+
+  el.innerHTML = `
+  <div class="ph"><div class="ph-inner">
+    <h1>Pagamento</h1>
+    <p>Escolha o método de pagamento para concluir a sua subscrição.</p>
+  </div></div>
+  <div class="pc">
+    <div class="pay-grid">
+      <div>
+        <div class="card p-5 mb-4">
+          <h3 style="font-size:1rem;margin-bottom:1rem">Método de pagamento</h3>
+          <div class="pay-methods">
+            ${methods.map(m => `
+              <button class="pay-method ${payState.method===m.id?'selected':''}" onclick="pickPayMethod('${m.id}')">
+                <span class="pay-icon">${m.icon}</span>
+                <div class="pay-info">
+                  <p class="pay-name">${m.name}</p>
+                  <p class="pay-desc">${m.desc}</p>
+                </div>
+                ${payState.method===m.id ? '<span class="pay-check">✓</span>' : ''}
+              </button>`).join('')}
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <h3 style="font-size:1rem;margin-bottom:1rem">Detalhes</h3>
+          ${renderPayDetails()}
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="overflow:hidden;position:sticky;top:80px">
+          <div class="plan-head-card">
+            <p style="color:var(--teal);font-size:.82rem;font-weight:600;margin-bottom:6px">${plan.name}</p>
+            <div class="flex items-end gap-2">
+              <span style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;color:white">€${plan.price.toLocaleString('pt-PT')}</span>
+              <span style="color:#94a3b8;margin-bottom:5px">/ano</span>
+            </div>
+          </div>
+          <div class="p-5">
+            <p class="text-gray text-sm fw-600 mb-3">A pagar agora:</p>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray">Subscrição anual</span>
+              <span class="text-navy">€${plan.price.toLocaleString('pt-PT')}</span>
+            </div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray">${selected.length} eletrodomésticos</span>
+              <span class="text-teal">Incluído</span>
+            </div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray">Entrega e instalação</span>
+              <span class="text-teal">Gratuito</span>
+            </div>
+            <div class="flex justify-between" style="font-size:1.05rem;border-top:1px solid var(--gray-100);padding-top:10px;margin-top:10px">
+              <span class="text-navy fw-600">Total</span>
+              <span class="text-teal fw-600">€${plan.price.toLocaleString('pt-PT')}</span>
+            </div>
+
+            <button onclick="processPayment()" class="btn btn-primary w-full mt-4" id="pay-btn" ${payState.processing?'disabled':''}>
+              ${payState.processing ? '⏳ A processar...' : `🔒 Pagar €${plan.price.toLocaleString('pt-PT')}`}
+            </button>
+            <p class="text-gray text-xs text-center mt-2">🔒 Pagamento seguro · Encriptação SSL</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderPayDetails() {
+  if (payState.method === 'mbway') {
+    return `
+      <div class="field">
+        <label>Número de telemóvel</label>
+        <input type="text" placeholder="9XX XXX XXX" maxlength="11">
+        <p class="text-gray text-xs mt-1">Vai receber uma notificação no seu telemóvel.</p>
+      </div>`;
+  }
+  if (payState.method === 'stripe') {
+    return `
+      <div class="field">
+        <label>Número do cartão</label>
+        <input type="text" placeholder="4242 4242 4242 4242" maxlength="19">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Validade</label>
+          <input type="text" placeholder="MM/AA" maxlength="5">
+        </div>
+        <div class="field">
+          <label>CVV</label>
+          <input type="text" placeholder="123" maxlength="3">
+        </div>
+      </div>`;
+  }
+  if (payState.method === 'paypal') {
+    return `
+      <div class="field">
+        <label>Email PayPal</label>
+        <input type="text" placeholder="email@exemplo.com">
+        <p class="text-gray text-xs mt-1">Será redirecionado para a página do PayPal.</p>
+      </div>`;
+  }
+  if (payState.method === 'mb') {
+    return `
+      <div class="info-banner info-blue">
+        ℹ️ Após confirmar, vai receber a entidade e referência para pagar em qualquer caixa Multibanco ou homebanking.
+      </div>`;
+  }
+  return '';
+}
+
+function pickPayMethod(id) {
+  payState.method = id;
+  renderPayment();
+}
+
+function processPayment() {
+  payState.processing = true;
+  renderPayment();
+  // simular processamento de 1.5s
+  setTimeout(() => {
+    confirmSubscription();
+    payState.processing = false;
+    renderPaymentSuccess();
+  }, 1500);
+}
+
+function renderPaymentSuccess() {
+  const plan = getCurrentPlan();
+  document.getElementById('page-payment').innerHTML = `
+  <div class="success-wrap"><div class="success-box">
+    <div class="success-icon">✅</div>
+    <h2 style="margin-bottom:12px">Pagamento Concluído!</h2>
+    <p class="text-gray mb-2">A sua subscrição <strong class="text-navy">${plan?.name||''}</strong> está ativa.</p>
+    <p class="text-gray mb-6">Total pago: <strong class="text-navy">€${plan?.price.toLocaleString('pt-PT')||'0'}</strong></p>
+
+    <div class="info-banner info-teal mb-4" style="text-align:left">
+      ✉️ Enviámos um comprovativo para o seu email.
+    </div>
+
+    <p class="text-gray text-sm mb-4">O próximo passo é agendar a entrega dos seus eletrodomésticos.</p>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary w-full" data-nav="/delivery">
+        🚚 Agendar Entrega
+      </button>
+      <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
+    </div>
+  </div></div>`;
 }
 
 // ─── DELIVERY ─────────────────────────────────────────────────────────────────
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const SLOTS=['08:00 – 10:00','10:00 – 12:00','12:00 – 14:00','14:00 – 16:00','16:00 – 18:00'];
-let dState={yr:null,mo:null,date:null,slot:null,addr:''};
+let dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};
+
+// Devolve os IDs dos eletrodomésticos já marcados para entrega
+function getDeliveredItemIds() {
+  const ids = new Set();
+  getDeliveries().forEach(d => (d.items || []).forEach(i => ids.add(i.id)));
+  return ids;
+}
+
+// Itens da subscrição ainda não agendados para entrega
+function getPendingDeliveryItems() {
+  const delivered = getDeliveredItemIds();
+  return getSelectedAppliances().filter(a => !delivered.has(a.id));
+}
 
 function renderDelivery() {
   const today=new Date();
@@ -485,35 +703,91 @@ function renderDelivery() {
   const {yr,mo,date,slot,addr}=dState;
   const dim=new Date(yr,mo+1,0).getDate();
   const fd=new Date(yr,mo,1).getDay();
-  const sel=getSelectedAppliances();
   const deliveries=getDeliveries();
+  const isFirstDelivery = deliveries.length === 0;
+  const pendingItems = getPendingDeliveryItems();
+
+  // Na 1ª entrega: todos os itens são incluídos automaticamente
+  // Em entregas seguintes: o utilizador escolhe quais (de entre os pendentes)
+  if (isFirstDelivery && dState.itemIds.length === 0) {
+    dState.itemIds = getSelectedAppliances().map(a => a.id);
+  }
+
+  // Validar dState.itemIds — remover IDs que já não estão pendentes
+  const validIds = new Set(isFirstDelivery
+    ? getSelectedAppliances().map(a=>a.id)
+    : pendingItems.map(a=>a.id));
+  dState.itemIds = dState.itemIds.filter(id => validIds.has(id));
+
+  const selectedItems = (isFirstDelivery ? getSelectedAppliances() : pendingItems)
+    .filter(a => dState.itemIds.includes(a.id));
 
   const avail=d=>{const x=new Date(yr,mo,d);return x>=minD&&x<=maxD&&x.getDay()!==0&&x.getDay()!==6;};
   const isSel=d=>date&&date.getDate()===d&&date.getMonth()===mo&&date.getFullYear()===yr;
 
+  // Se não há nada pendente para entregar (em entrega adicional), mostrar mensagem
+  if (!isFirstDelivery && pendingItems.length === 0) {
+    document.getElementById('page-delivery').innerHTML = `
+    <div class="success-wrap"><div class="success-box">
+      <div class="success-icon">📦</div>
+      <h2 style="margin-bottom:12px">Todas as entregas agendadas</h2>
+      <p class="text-gray mb-6">Todos os eletrodomésticos da sua subscrição já têm entrega agendada. Adicione mais eletrodomésticos ao seu plano para agendar uma nova entrega.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary w-full" data-nav="/appliances">📦 Adicionar mais eletrodomésticos</button>
+        <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
+      </div>
+    </div></div>`;
+    return;
+  }
+
   document.getElementById('page-delivery').innerHTML=`
   <div class="ph"><div class="ph-inner">
-    <h1>Agendar Entrega</h1>
-    <p>Escolha uma data entre 7 e 30 dias. Apenas dias úteis.</p>
+    <h1>${isFirstDelivery ? 'Agendar Entrega' : 'Agendar Nova Entrega'}</h1>
+    <p>${isFirstDelivery
+      ? 'Escolha uma data entre 7 e 30 dias. Apenas dias úteis.'
+      : 'Escolha quais eletrodomésticos quer receber nesta entrega.'}</p>
   </div></div>
   <div class="pc">
     ${deliveries.length>0?`
     <div class="card p-5 mb-6">
-      <h3 style="font-size:1rem;margin-bottom:.875rem">📦 Entregas agendadas</h3>
-      ${deliveries.map((d,i)=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <span style="font-size:1.5rem">🚚</span>
-          <div>
+      <h3 style="font-size:1rem;margin-bottom:.875rem">📦 Entregas já agendadas</h3>
+      ${deliveries.map(d=>`
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+          <span style="font-size:1.5rem;flex-shrink:0">🚚</span>
+          <div style="flex:1;min-width:0">
             <p class="text-navy text-sm fw-600">${d.date}</p>
             <p class="text-gray text-xs">${d.slot} · ${d.addr}</p>
+            ${(d.items||[]).length>0?`<p class="text-gray text-xs" style="margin-top:4px">📋 ${(d.items||[]).map(i=>i.name).join(', ')}</p>`:''}
           </div>
-          <span class="badge bg-green" style="margin-left:auto">Agendada</span>
+          <span class="badge bg-green" style="flex-shrink:0">Agendada</span>
         </div>`).join('')}
     </div>` : ''}
+
     <div class="del-grid">
       <div>
+        ${!isFirstDelivery ? `
+        <div class="card p-5 mb-5">
+          <div class="flex items-center gap-2 mb-3"><span>📋</span><h3 style="font-size:1rem">Eletrodomésticos para esta entrega</h3></div>
+          <p class="text-gray text-sm mb-3">Selecione quais eletrodomésticos quer receber. Apenas eletrodomésticos sem entrega agendada estão disponíveis.</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${pendingItems.map(a=>{
+              const checked = dState.itemIds.includes(a.id);
+              return `
+              <label class="item-pick ${checked?'checked':''}" onclick="toggleDelItem('${a.id}')">
+                <input type="checkbox" ${checked?'checked':''} style="margin-right:8px;cursor:pointer" onclick="event.stopPropagation();toggleDelItem('${a.id}')">
+                <img src="${a.image}" alt="${a.name}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.src='https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=42&h=42&fit=crop'">
+                <div style="flex:1;min-width:0">
+                  <p class="text-navy text-sm fw-600 truncate">${a.name}</p>
+                  <p class="text-gray" style="font-size:.7rem">${CATEGORY_ICONS[a.category]||''} ${a.category}</p>
+                </div>
+              </label>`;
+            }).join('')}
+          </div>
+          ${dState.itemIds.length === 0 ? '<p class="text-gray text-xs mt-3">Selecione pelo menos 1 eletrodoméstico.</p>' : `<p class="text-teal text-xs fw-600 mt-3">✓ ${dState.itemIds.length} selecionado(s)</p>`}
+        </div>`:''}
+
         <div class="info-banner info-blue mb-5">
-          ℹ️ Entregas disponíveis<strong>de segunda a sexta-feira</strong>, entre
+          ℹ️ Entregas disponíveis <strong>de segunda a sexta-feira</strong>, entre
           <strong>${minD.toLocaleDateString('pt-PT',{day:'numeric',month:'long'})}</strong> e
           <strong>${maxD.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})}</strong>.
         </div>
@@ -543,28 +817,64 @@ function renderDelivery() {
         ${date&&slot?`
         <div class="card p-6">
           <div class="flex items-center gap-2 mb-3"><span>📍</span><h3 style="font-size:1rem">Morada de entrega</h3></div>
-          <input type="text" id="d-addr" placeholder="Morada completa de entrega..." value="${addr}" oninput="dState.addr=this.value">
+          <input type="text" id="d-addr" placeholder="Morada completa de entrega..." value="${addr}" oninput="onAddrInput(this.value)">
         </div>`:''}
       </div>
       <div>
-        <div class="card p-5">
+        <div class="card p-5" style="position:sticky;top:80px">
           <h3 style="font-size:1rem;margin-bottom:1rem">Resumo</h3>
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem;font-size:.875rem">
             <div class="flex justify-between"><span class="text-gray">Data</span><span class="text-navy">${date?date.toLocaleDateString('pt-PT',{day:'numeric',month:'short',year:'numeric'}):'—'}</span></div>
             <div class="flex justify-between"><span class="text-gray">Horário</span><span class="text-navy">${slot||'—'}</span></div>
-            <div class="flex justify-between"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${sel.length}</span></div>
+            <div class="flex justify-between"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${selectedItems.length}</span></div>
             <div class="flex justify-between"><span class="text-gray">Taxa de entrega</span><span class="text-teal">Gratuita</span></div>
           </div>
-          <button onclick="confirmDel()" class="btn btn-primary w-full" ${!date||!slot||!addr?'disabled':''}>
+          ${selectedItems.length>0?`
+          <div style="border-top:1px solid var(--gray-100);padding-top:.875rem;margin-bottom:1rem">
+            <p class="text-gray text-xs mb-2">Artigos:</p>
+            ${selectedItems.map(a=>`<div class="flex items-center gap-2 text-sm" style="margin-bottom:5px"><span>${CATEGORY_ICONS[a.category]||'📦'}</span><span class="text-gray truncate">${a.name}</span></div>`).join('')}
+          </div>`:''}
+          <button id="d-confirm-btn" onclick="confirmDel()" class="btn btn-primary w-full" ${!date||!slot||!addr||selectedItems.length===0?'disabled':''}>
             🚚 Confirmar Entrega
           </button>
-          ${!date?'<p class="text-gray text-xs text-center mt-2">Selecione uma data</p>':
-            !slot?'<p class="text-gray text-xs text-center mt-2">Escolha um horário</p>':
-            !addr?'<p class="text-gray text-xs text-center mt-2">Introduza a morada</p>':''}
+          <p id="d-hint" class="text-gray text-xs text-center mt-2">${
+            selectedItems.length===0?'Selecione eletrodomésticos':
+            !date?'Selecione uma data':
+            !slot?'Escolha um horário':
+            !addr?'Introduza a morada':''
+          }</p>
         </div>
       </div>
     </div>
   </div>`;
+}
+
+// Atualizar morada sem re-render — evita perder o foco e o disabled do botão
+function onAddrInput(val) {
+  dState.addr = val;
+  const btn = document.getElementById('d-confirm-btn');
+  const hint = document.getElementById('d-hint');
+  if (!btn) return;
+  const {date, slot} = dState;
+  const isFirst = getDeliveries().length === 0;
+  const pending = isFirst ? getSelectedAppliances() : getPendingDeliveryItems();
+  const selectedItems = pending.filter(a => dState.itemIds.includes(a.id));
+  const ready = date && slot && val.trim() && selectedItems.length > 0;
+  btn.disabled = !ready;
+  if (hint) {
+    hint.textContent =
+      selectedItems.length===0 ? 'Selecione eletrodomésticos' :
+      !date ? 'Selecione uma data' :
+      !slot ? 'Escolha um horário' :
+      !val.trim() ? 'Introduza a morada' : '';
+  }
+}
+
+function toggleDelItem(id) {
+  const i = dState.itemIds.indexOf(id);
+  if (i >= 0) dState.itemIds.splice(i, 1);
+  else dState.itemIds.push(id);
+  renderDelivery();
 }
 
 function prevMo(){if(dState.mo===0){dState.mo=11;dState.yr--;}else dState.mo--;renderDelivery();}
@@ -573,13 +883,18 @@ function pickDate(d){dState.date=new Date(dState.yr,dState.mo,d);dState.slot=nul
 function pickSlot(s){dState.slot=s;renderDelivery();}
 
 function confirmDel(){
-  if(!dState.date||!dState.slot||!dState.addr) return;
+  if(!dState.date||!dState.slot||!dState.addr||dState.itemIds.length===0) return;
+
+  const allCandidates = getDeliveries().length === 0
+    ? getSelectedAppliances()
+    : getPendingDeliveryItems();
+  const items = allCandidates.filter(a => dState.itemIds.includes(a.id));
 
   const del={
     date:dState.date.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
     slot:dState.slot,
     addr:dState.addr,
-    items:getSelectedAppliances()
+    items:items
   };
 
   const result=saveDelivery(del);
@@ -588,7 +903,7 @@ function confirmDel(){
     return;
   }
 
-  dState={yr:null,mo:null,date:null,slot:null,addr:''};
+  dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};
   renderDeliverySuccess(del);
 }
 
@@ -612,7 +927,7 @@ function renderDeliverySuccess(del){
         </div>`).join('')}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-primary w-full" onclick="dState={yr:null,mo:null,date:null,slot:null,addr:''};navigate('/delivery')">
+      <button class="btn btn-primary w-full" onclick="dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};navigate('/delivery')">
         📅 Agendar outra entrega
       </button>
       <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
