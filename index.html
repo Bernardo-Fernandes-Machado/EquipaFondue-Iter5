@@ -13,24 +13,31 @@
 </head>
 <body>
   <div id="navbar-root"></div>
+
+  <!-- PÁGINAS CLIENTE (B2C) -->
   <div id="page-home"         class="page"></div>
   <div id="page-login"        class="page"></div>
   <div id="page-register"     class="page"></div>
   <div id="page-plans"        class="page"></div>
   <div id="page-appliances"   class="page"></div>
   <div id="page-subscription" class="page"></div>
-  <div id="page-payment"      class="page"></div>
   <div id="page-delivery"     class="page"></div>
   <div id="page-dashboard"    class="page"></div>
+
+  <!-- PÁGINAS FORNECEDOR (B2B) -->
+  <div id="page-supplier-login"     class="page"></div>
+  <div id="page-supplier-dashboard" class="page"></div>
+
   <div id="footer-root"></div>
 
   <script src="js/data.js"></script>
+  <script src="js/supplier.js"></script>
   <script src="js/app.js"></script>
   <script src="js/pages.js"></script>
   <script>
     document.getElementById('footer-root').innerHTML = renderFooter();
     updateNavbar();
-    renderPage(getCurrentPath());
+    renderPage(location.pathname || '/');
   </script>
 </body>
 </html>

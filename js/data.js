@@ -63,8 +63,8 @@ const CATEGORY_ICONS = {
 };
 
 // ─── STORAGE KEYS ─────────────────────────────────────────────────────────────
-const USERS_KEY = 'homeloop_users';
-const STATE_KEY = 'homeloop_state';
+const USERS_KEY = 'homeloop_users';   // lista de utilizadores registados
+const STATE_KEY = 'homeloop_state';   // estado da sessão atual
 
 // ─── USERS REGISTRY ──────────────────────────────────────────────────────────
 function getUsers() {
@@ -104,8 +104,8 @@ function defaultState() {
     planId: null,
     selectedIds: [],
     subscribed: false,
-    deliveries: [],
-    cancelledIds: [],
+    deliveries: [],      // array de entregas (permite agendar várias)
+    cancelledIds: [],    // IDs de eletrodomésticos cujo aluguer foi anulado
   };
 }
 
@@ -151,6 +151,7 @@ function addAppliance(id) {
   if (!plan || state.selectedIds.length >= plan.maxAppliances) return false;
   if (state.selectedIds.includes(id)) return false;
   state.selectedIds.push(id);
+  // se estava cancelado, remove o cancel
   state.cancelledIds = (state.cancelledIds||[]).filter(i => i !== id);
   saveState(state);
   return true;
@@ -162,6 +163,7 @@ function removeAppliance(id) {
   saveState(state);
 }
 
+// Anular aluguer de um eletrodoméstico específico
 function cancelAppliance(id) {
   const state = getState();
   state.selectedIds = state.selectedIds.filter(i => i !== id);
@@ -180,15 +182,12 @@ function confirmSubscription() {
   saveState(state);
 }
 
-function isSubscribed() { return !!getState().subscribed; }
-
 // ─── DELIVERY ────────────────────────────────────────────────────────────────
 function saveDelivery(delivery) {
   const state = getState();
   if (!state.deliveries) state.deliveries = [];
   state.deliveries.push(delivery);
   saveState(state);
-  return { ok: true };
 }
 
 function getDeliveries() {

@@ -1,52 +1,83 @@
-// ─── ROUTER (hash-based para funcionar em GitHub Pages e subpaths) ──────────
-// Páginas públicas (sem login): /, /login, /register, /appliances, /plans
-// Páginas privadas (requerem login): /subscription, /payment, /delivery, /dashboard
-const PUBLIC_PATHS  = ['/', '/login', '/register', '/appliances', '/plans'];
-const PRIVATE_PATHS = ['/subscription', '/payment', '/delivery', '/dashboard'];
-
-function getCurrentPath() {
-  const h = location.hash.replace(/^#/, '');
-  return h || '/';
-}
-
+// ─── ROUTER ──────────────────────────────────────────────────────────────────
 function navigate(path) {
-  if (PRIVATE_PATHS.includes(path) && !isLoggedIn()) {
-    location.hash = '/login';
-    return;
-  }
-  location.hash = path;
-}
+  const pub = ['/', '/login', '/register', '/supplier/login'];
+  const supplierPaths = ['/supplier/login', '/supplier/dashboard'];
 
-function renderPage(path) {
-  if (PRIVATE_PATHS.includes(path) && !isLoggedIn()) {
-    path = '/login';
-    location.hash = '/login';
+  // Rotas de fornecedor
+  if (path.startsWith('/supplier/') && path !== '/supplier/login') {
+    if (!isSupplierLoggedIn()) {
+      history.pushState(null, '', '/supplier/login');
+      renderPage('/supplier/login'); return;
+    }
   }
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const map = {
-    '/':'page-home', '/login':'page-login', '/register':'page-register',
-    '/plans':'page-plans', '/appliances':'page-appliances',
-    '/subscription':'page-subscription', '/payment':'page-payment',
-    '/delivery':'page-delivery', '/dashboard':'page-dashboard',
-  };
-  const el = document.getElementById(map[path] || 'page-home');
-  if (el) el.classList.add('active');
-  updateNavbar();
-  switch(path) {
-    case '/':             renderHome();         break;
-    case '/login':        renderLogin();        break;
-    case '/register':     renderRegister();     break;
-    case '/plans':        renderPlans();        break;
-    case '/appliances':   renderAppliances();   break;
-    case '/subscription': renderSubscription(); break;
-    case '/payment':      renderPayment();      break;
-    case '/delivery':     renderDelivery();     break;
-    case '/dashboard':    renderDashboard();    break;
+  // Rotas de cliente
+  if (!pub.includes(path) && !path.startsWith('/supplier/') && !isLoggedIn()) {
+    history.pushState(null, '', '/login');
+    renderPage('/login'); return;
   }
+  history.pushState(null, '', path);
+  renderPage(path);
   window.scrollTo(0, 0);
 }
 
-window.addEventListener('hashchange', () => renderPage(getCurrentPath()));
+function renderPage(path) {
+  const pub = ['/', '/login', '/register', '/supplier/login'];
+
+  // Guardar protecção de rotas
+  if (!pub.includes(path) && !path.startsWith('/supplier/') && !isLoggedIn()) {
+    path = '/login';
+    history.replaceState(null, '', '/login');
+  }
+  if (path.startsWith('/supplier/') && path !== '/supplier/login' && !isSupplierLoggedIn()) {
+    path = '/supplier/login';
+    history.replaceState(null, '', '/supplier/login');
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  const map = {
+    '/':                      'page-home',
+    '/login':                 'page-login',
+    '/register':              'page-register',
+    '/plans':                 'page-plans',
+    '/appliances':            'page-appliances',
+    '/subscription':          'page-subscription',
+    '/delivery':              'page-delivery',
+    '/dashboard':             'page-dashboard',
+    '/supplier/login':        'page-supplier-login',
+    '/supplier/dashboard':    'page-supplier-dashboard',
+  };
+
+  const el = document.getElementById(map[path] || 'page-home');
+  if (el) el.classList.add('active');
+
+  // Navbar: esconder em páginas de fornecedor (têm o seu próprio header)
+  const navbarRoot = document.getElementById('navbar-root');
+  const footerRoot = document.getElementById('footer-root');
+  if (path.startsWith('/supplier/')) {
+    if (navbarRoot) navbarRoot.style.display = 'none';
+    if (footerRoot) footerRoot.style.display = 'none';
+  } else {
+    if (navbarRoot) navbarRoot.style.display = '';
+    if (footerRoot) footerRoot.style.display = '';
+    updateNavbar();
+  }
+
+  switch(path) {
+    case '/':                   renderHome();              break;
+    case '/login':              renderLogin();             break;
+    case '/register':           renderRegister();          break;
+    case '/plans':              renderPlans();             break;
+    case '/appliances':         renderAppliances();        break;
+    case '/subscription':       renderSubscription();      break;
+    case '/delivery':           renderDelivery();          break;
+    case '/dashboard':          renderDashboard();         break;
+    case '/supplier/login':     renderSupplierLogin();     break;
+    case '/supplier/dashboard': renderSupplierDashboard(); break;
+  }
+}
+
+window.addEventListener('popstate', () => renderPage(location.pathname));
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-nav]');
   if (a) { e.preventDefault(); navigate(a.dataset.nav); }
@@ -58,7 +89,7 @@ function updateNavbar() {
   if (!root) return;
   const loggedIn = isLoggedIn();
   const user = getCurrentUser();
-  const path = getCurrentPath();
+  const path = location.pathname;
   const selected = getSelectedAppliances();
 
   const lnk = (label, to, extra='') =>
@@ -70,11 +101,10 @@ function updateNavbar() {
       <div class="nb-logo" data-nav="/">Home<span>Loop</span></div>
       <div class="nb-links">
         ${lnk('Início','/')}
-        ${lnk('Catálogo','/appliances')}
-        ${lnk('Planos','/plans')}
         ${loggedIn ? `
+          ${lnk('Catálogo','/appliances')}
+          ${lnk('Planos','/plans')}
           ${lnk('Subscrição','/subscription')}
-          ${lnk('Painel','/dashboard')}
         ` : ''}
       </div>
       <div class="nb-right">
@@ -89,6 +119,9 @@ function updateNavbar() {
         ` : `
           <button class="nb-link" data-nav="/login">Entrar</button>
           <button class="btn nb-cta" data-nav="/register">Registar-se</button>
+          <button class="nb-link" data-nav="/supplier/login" style="font-size:.78rem;color:var(--gray-400);border:1px solid var(--gray-200);padding:6px 12px;border-radius:9px">
+            🏭 Fornecedor
+          </button>
         `}
       </div>
       <button class="nb-burger" onclick="toggleMobile()">☰</button>
@@ -103,10 +136,9 @@ function updateNavbar() {
         <button onclick="handleLogout()" style="color:var(--red)">Sair</button>
       ` : `
         <button data-nav="/">Início</button>
-        <button data-nav="/appliances">Catálogo</button>
-        <button data-nav="/plans">Planos</button>
         <button data-nav="/login">Entrar</button>
         <button data-nav="/register">Registar-se</button>
+        <button data-nav="/supplier/login">🏭 Área de Fornecedor</button>
       `}
     </div>
   </nav>`;
@@ -143,8 +175,10 @@ function renderFooter() {
           ${['Sobre Nós','Carreiras','Blog'].map(i=>`<a href="#" style="display:block;color:#94a3b8;font-size:.82rem;margin-bottom:7px">${i}</a>`).join('')}
         </div>
         <div>
-          <h4 style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#cbd5e1;margin-bottom:.875rem">Suporte</h4>
-          ${['Centro de Ajuda','Contacte-nos','Privacidade'].map(i=>`<a href="#" style="display:block;color:#94a3b8;font-size:.82rem;margin-bottom:7px">${i}</a>`).join('')}
+          <h4 style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#cbd5e1;margin-bottom:.875rem">Parceiros B2B</h4>
+          <button data-nav="/supplier/login" style="display:block;background:none;border:none;cursor:pointer;color:var(--teal);font-size:.82rem;margin-bottom:7px;font-family:'DM Sans',sans-serif;text-align:left">🏭 Área de Fornecedor</button>
+          <a href="#" style="display:block;color:#94a3b8;font-size:.82rem;margin-bottom:7px">Tornar-se Parceiro</a>
+          <a href="#" style="display:block;color:#94a3b8;font-size:.82rem;margin-bottom:7px">Privacidade</a>
         </div>
       </div>
       <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid #334155;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -157,7 +191,6 @@ function renderFooter() {
 
 // ─── APPLIANCE CARD ──────────────────────────────────────────────────────────
 function appCard(a, showCancel = false) {
-  const loggedIn = isLoggedIn();
   const sel = isSelected(a.id);
   const plan = getCurrentPlan();
   const state = getState();
@@ -165,8 +198,7 @@ function appCard(a, showCancel = false) {
   const icon = CATEGORY_ICONS[a.category] || '📦';
 
   let btnClass, btnLabel;
-  if (!loggedIn)   { btnClass='no-plan';  btnLabel='Inicie sessão para alugar'; }
-  else if (!plan)  { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
+  if (!plan)       { btnClass='no-plan';  btnLabel='Escolha um plano primeiro'; }
   else if (sel)    { btnClass='is-added'; btnLabel='✓ Adicionado — clique para remover'; }
   else if (full)   { btnClass='is-full';  btnLabel=`Plano completo (${plan.maxAppliances}/${plan.maxAppliances})`; }
   else             { btnClass='can-add';  btnLabel='Adicionar à subscrição'; }
@@ -198,11 +230,10 @@ function appCard(a, showCancel = false) {
 }
 
 function toggleApp(id) {
-  if (!isLoggedIn()) { navigate('/login'); return; }
   if (!getCurrentPlan()) { navigate('/plans'); return; }
   if (isSelected(id)) removeAppliance(id);
   else addAppliance(id);
-  renderPage(getCurrentPath());
+  renderPage(location.pathname);
 }
 
 function handleCancelAppliance(id) {
@@ -210,6 +241,6 @@ function handleCancelAppliance(id) {
   if (!a) return;
   if (confirm(`Tem a certeza que quer anular o aluguer de "${a.name}"? Esta ação remove o equipamento do seu plano.`)) {
     cancelAppliance(id);
-    renderPage(getCurrentPath());
+    renderPage(location.pathname);
   }
 }
