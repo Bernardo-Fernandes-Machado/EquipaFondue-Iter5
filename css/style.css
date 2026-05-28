@@ -241,118 +241,176 @@ textarea{resize:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .pulse{animation:pulse 2s infinite}
 
-/* ─── PAYMENT PAGE ─── */
-.pay-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
-.pay-methods{display:flex;flex-direction:column;gap:10px}
-.pay-method{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--gray-200);border-radius:14px;background:white;cursor:pointer;transition:all .15s;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
-.pay-method:hover{border-color:var(--teal);background:var(--teal-l)}
-.pay-method.selected{border-color:var(--teal);background:var(--teal-l);box-shadow:0 0 0 3px rgba(20,184,166,.15)}
-.pay-icon{font-size:1.6rem;width:42px;height:42px;background:var(--gray-50);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pay-method.selected .pay-icon{background:white}
-.pay-info{flex:1;min-width:0}
-.pay-name{font-weight:600;color:var(--navy);font-size:.9rem;margin-bottom:2px}
-.pay-desc{color:var(--gray-500);font-size:.78rem}
-.pay-check{color:var(--teal);font-size:1.1rem;font-weight:700;flex-shrink:0}
-
-/* Item pick (delivery item selector) */
-.item-pick{display:flex;align-items:center;gap:12px;padding:10px 12px;border:2px solid var(--gray-200);border-radius:12px;background:white;cursor:pointer;transition:all .15s}
-.item-pick:hover{border-color:var(--teal);background:var(--teal-l)}
-.item-pick.checked{border-color:var(--teal);background:var(--teal-l)}
-
-/* ─── RESPONSIVE ─── */
+/* RESPONSIVE */
 @media(max-width:1024px){
   .benefit-grid{grid-template-columns:repeat(2,1fr)}
   .app-grid{grid-template-columns:repeat(2,1fr)}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .sub-grid,.del-grid,.pay-grid{grid-template-columns:1fr}
+  .sub-grid,.del-grid{grid-template-columns:1fr}
   .plans-grid{grid-template-columns:1fr 1fr;max-width:100%}
-  /* nas grids 1col, remove sticky */
-  .pay-grid > div .card[style*="sticky"],
-  .del-grid > div .card[style*="sticky"]{position:static !important}
 }
 @media(max-width:768px){
-  .nb-links,.nb-right{display:none !important}
-  .nb-burger{display:flex !important}
-  .nb-inner{padding:0 1rem}
-  .nb-logo{font-size:1.2rem}
+  .nb-links,.nb-right{display:none}
+  .nb-burger{display:flex}
   .app-grid{grid-template-columns:1fr}
-  .stats-inner{grid-template-columns:repeat(2,1fr);padding:1.5rem 1rem}
+  .stats-inner{grid-template-columns:repeat(2,1fr)}
   .benefit-grid{grid-template-columns:1fr}
   .plans-grid{grid-template-columns:1fr}
-  .hero{padding:3rem 1.25rem}
-  .hero-desc{font-size:.95rem}
+  .hero{padding:3.5rem 1.5rem}
   .ts-grid{grid-template-columns:1fr}
   .slot-row{grid-template-columns:repeat(4,1fr)}
-  /* page header padding */
-  .ph-inner{padding:1.75rem 1rem}
-  .ph h1{font-size:1.5rem}
-  .ph p{font-size:.85rem}
-  .pc{padding:1.5rem 1rem}
-  .section{padding:3rem 1rem}
-  .sec-hdr{margin-bottom:2rem}
-  /* dashboard */
-  .dash-hero{padding:1.75rem 1rem}
-  .dash-hero h1{font-size:1.4rem !important}
-  .kpi-grid{gap:8px}
-  .kpi{padding:.75rem}
-  .kpi-val{font-size:1rem}
-  /* botões da navbar (cart) */
-  .nb-burger{padding:6px}
-  /* cal */
-  .cal-day{font-size:.75rem}
-  .cal-dn{font-size:.65rem;padding:5px 0}
-  /* filter bar wraps */
-  .filter-bar{flex-direction:column;align-items:stretch}
-  .search-box{max-width:100%}
-  .filter-pills{overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-  .fpill{flex-shrink:0}
-  /* sticky bar */
-  .sticky-inner{padding:10px 1rem;gap:8px}
-  .sticky-inner > div{min-width:0;flex:1}
-  .sticky-inner button{flex-shrink:0;padding:10px 14px;font-size:.8rem}
-  /* dashboard dois cols → um */
-  .pc > div[style*="grid-template-columns:1fr 300px"]{
-    grid-template-columns:1fr !important
-  }
-  /* subscription right col → empilhado */
-  .pc > div[style*="grid-template-columns:1fr 320px"],
-  .pc > div[style*="grid-template-columns:1fr 360px"]{
-    grid-template-columns:1fr !important
-  }
-  /* cards */
-  .card{border-radius:14px}
-  .p-6{padding:16px}
-  .p-5{padding:14px}
-  /* footer */
-  footer .footer-inner > div:first-child{grid-template-columns:1fr 1fr !important;gap:1.5rem !important}
-  footer .footer-bottom{flex-direction:column;text-align:center}
-  /* plan card head */
-  .plan-head{padding:1.2rem}
-  .plan-body{padding:1rem}
-  .plan-price{font-size:1.8rem}
-  /* hero buttons stack */
-  .hero-btns{flex-direction:column;align-items:stretch}
-  .hero-btns .btn{width:100%;justify-content:center}
-  .hero-trust{gap:.875rem}
-  .hero-trust-item{font-size:.78rem}
-  /* login box */
-  .login-box{padding:1.75rem;border-radius:18px}
-  .success-box{padding:1.75rem;border-radius:18px}
-  /* slot row icons */
-  .slot{font-size:.8rem;height:32px}
-  /* payment method on mobile */
-  .pay-method{padding:12px}
-  .pay-icon{width:36px;height:36px;font-size:1.3rem}
-  .pay-name{font-size:.85rem}
-  .pay-desc{font-size:.72rem}
 }
-@media(max-width:480px){
-  .stats-inner{grid-template-columns:1fr 1fr;padding:1.25rem .75rem}
-  .stat-val{font-size:1.15rem}
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  footer .footer-inner > div:first-child{grid-template-columns:1fr !important}
-  .filter-pills{margin:0 -1rem;padding:0 1rem 6px}
-  /* hero badge fica pequeno */
-  .hero-badge{font-size:.72rem;padding:4px 10px}
-  .hero h1{font-size:2rem;line-height:1.15}
+
+/* ═══════════════════════════════════════════════════════
+   SUPPLIER / B2B PORTAL STYLES
+   CR-02: Área reservada para parceiros/fornecedores
+═══════════════════════════════════════════════════════ */
+
+/* Supplier header override */
+.sup-header {
+  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+}
+
+/* Tab bar sticky */
+.sup-tab-bar {
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  overflow-x: auto;
+}
+
+/* Mini bar chart bars */
+.bar-mini {
+  transition: height .4s ease, background .2s;
+}
+.bar-mini:hover {
+  filter: brightness(1.1);
+}
+
+/* Finance table row hover */
+table tbody tr:hover {
+  background: var(--teal-l) !important;
+  transition: background .15s;
+}
+
+/* Equipment condition badges */
+.cond-excellent { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+.cond-good      { background:var(--teal-l); color:var(--teal-d); border-color:var(--teal-m); }
+.cond-fair      { background:#fffbeb; color:#d97706; border-color:#fde68a; }
+.cond-bad       { background:#fee2e2; color:var(--red); border-color:#fca5a5; }
+.cond-new       { background:#eff6ff; color:#2563eb; border-color:#bfdbfe; }
+
+/* Breakdown card open state */
+.breakdown-open {
+  border-left: 3px solid #f97316;
+}
+.breakdown-resolved {
+  border-left: 3px solid #16a34a;
+  opacity: .72;
+}
+
+/* Order status pills */
+.order-pending   { background:#fff7ed; color:#ea580c; border-color:#fed7aa; }
+.order-confirmed { background:var(--teal-l); color:var(--teal-d); border-color:var(--teal-m); }
+.order-delivered { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+
+/* Anonymous comparison card */
+.anon-comparison {
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  border-radius: 18px;
+  padding: 1.4rem;
+}
+
+/* Supplier login demo hints */
+.sup-demo-hints {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+/* KPI strip in supplier header */
+.sup-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 1.25rem;
+}
+@media(max-width:768px) {
+  .sup-kpi-strip { grid-template-columns: repeat(2,1fr); }
+}
+
+/* Finance export button */
+.btn-export-pdf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: .82rem;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  transition: background .15s;
+}
+.btn-export-pdf:hover { background: var(--navy2); }
+
+/* Revenue sparkline bar */
+.rev-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.rev-bar-fill {
+  width: 100%;
+  background: var(--teal-l);
+  border-radius: 5px 5px 0 0;
+  transition: height .4s ease;
+  cursor: default;
+}
+.rev-bar-fill.current {
+  background: var(--teal);
+}
+.rev-bar-label {
+  font-size: .6rem;
+  color: var(--gray-400);
+}
+
+/* Supplier nav link in main navbar */
+.nb-link-supplier {
+  font-size: .78rem;
+  color: var(--gray-400);
+  border: 1px solid var(--gray-200);
+  padding: 6px 12px;
+  border-radius: 9px;
+}
+.nb-link-supplier:hover {
+  border-color: var(--teal);
+  color: var(--teal-d);
+  background: var(--teal-l);
+}
+
+/* Responsive supplier dashboard */
+@media(max-width:1024px) {
+  #page-supplier-dashboard [style*="grid-template-columns:1fr 1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  #page-supplier-dashboard [style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  #page-supplier-dashboard [style*="grid-template-columns:repeat(4"] {
+    grid-template-columns: repeat(2,1fr) !important;
+  }
+}
+@media(max-width:640px) {
+  #page-supplier-dashboard [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
 }

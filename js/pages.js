@@ -21,11 +21,11 @@ function renderRegister() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="r-pass" placeholder="Mínimo 4 caracteres">
+        <input type="text" id="r-pass" placeholder="Mínimo 4 caracteres">
       </div>
       <div class="field">
         <label>Confirmar password</label>
-        <input type="password" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
+        <input type="text" id="r-pass2" placeholder="Repita a password" onkeydown="if(event.key==='Enter')doRegister()">
       </div>
       <button class="btn btn-primary w-full" onclick="doRegister()" style="margin-top:.5rem">Criar conta →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -43,11 +43,17 @@ function doRegister() {
   const pass2 = document.getElementById('r-pass2')?.value;
   const errEl = document.getElementById('reg-err');
 
-  const showErr = msg => { errEl.textContent = msg; errEl.classList.add('show'); };
+  const showErr = msg => {
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+  };
 
   if (pass !== pass2) return showErr('As passwords não coincidem.');
+
   const result = registerUser(name, age, email, pass);
   if (!result.ok) return showErr(result.error);
+
+  // login automático após registo
   login(email, pass);
   navigate('/');
 }
@@ -66,7 +72,7 @@ function renderLogin() {
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="text" id="l-pass" placeholder="A sua password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-primary w-full" onclick="doLogin()" style="margin-top:.5rem">Entrar →</button>
       <p style="text-align:center;font-size:.82rem;color:var(--gray-400);margin-top:1rem">
@@ -105,7 +111,7 @@ function renderHome() {
           ? `<button class="btn btn-primary" data-nav="/plans">Ver Planos →</button>
              <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>`
           : `<button class="btn btn-primary" data-nav="/register">Registar-se →</button>
-             <button class="btn btn-ghost" data-nav="/appliances">Ver Catálogo</button>`}
+             <button class="btn btn-ghost" data-nav="/login">Já tenho conta</button>`}
       </div>
       <div class="hero-trust">
         <span class="hero-trust-item">✅ Dois planos disponíveis</span>
@@ -183,7 +189,7 @@ function renderHome() {
           <h2 style="margin-bottom:4px">Eletrodomésticos disponíveis</h2>
           <p class="text-gray" style="font-size:.9rem">Marcas premium, tudo incluído na subscrição.</p>
         </div>
-        <button class="text-teal fw-600 text-sm" data-nav="/appliances"
+        <button class="text-teal fw-600 text-sm" data-nav="${loggedIn?'/appliances':'/register'}"
           style="background:none;border:none;cursor:pointer">Ver todos →</button>
       </div>
       <div class="app-grid">${APPLIANCES.slice(0,6).map(a=>appCard(a)).join('')}</div>
@@ -204,7 +210,6 @@ function renderHome() {
 
 // ─── PLANS ────────────────────────────────────────────────────────────────────
 function renderPlans() {
-  const loggedIn = isLoggedIn();
   const current = getCurrentPlan();
   document.getElementById('page-plans').innerHTML = `
   <div class="ph"><div class="ph-inner">
@@ -214,7 +219,7 @@ function renderPlans() {
   <div class="pc">
     <div class="plans-grid" style="max-width:700px;margin:0 auto 2.5rem">
       ${Object.values(PLANS).map(plan=>`
-        <div class="plan-card ${current?.id===plan.id?'selected':''}" onclick="${loggedIn?`choosePlan('${plan.id}')`:`navigate('/register')`}">
+        <div class="plan-card ${current?.id===plan.id?'selected':''}" onclick="choosePlan('${plan.id}')">
           <div class="plan-head" style="position:relative">
             ${plan.id==='completo'?'<div style="position:absolute;top:10px;right:10px;background:var(--teal);color:white;font-size:.7rem;padding:2px 10px;border-radius:999px">Mais popular</div>':''}
             <h3>${plan.name}</h3>
@@ -234,22 +239,11 @@ function renderPlans() {
           </div>
         </div>`).join('')}
     </div>
-    ${loggedIn
-      ? (current ? `
-        <div style="text-align:center">
-          <p class="text-gray text-sm mb-4">Plano selecionado: <strong class="text-navy">${current.name}</strong> — ${current.maxAppliances} eletrodomésticos · €${current.price}/ano</p>
-          <button class="btn btn-primary" data-nav="/appliances">Escolher eletrodomésticos →</button>
-        </div>`
-        : '<div style="text-align:center"><p class="text-gray text-sm">Clique num plano para o selecionar.</p></div>')
-      : `<div style="text-align:center">
-          <div class="info-banner info-blue" style="max-width:480px;margin:0 auto 1.5rem">
-            ℹ️ Para subscrever um plano precisa de <strong>criar uma conta gratuita</strong>.
-          </div>
-          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-            <button class="btn btn-primary" data-nav="/register">Criar conta →</button>
-            <button class="btn btn-outline" data-nav="/login">Já tenho conta</button>
-          </div>
-        </div>`}
+    ${current ? `
+    <div style="text-align:center">
+      <p class="text-gray text-sm mb-4">Plano selecionado: <strong class="text-navy">${current.name}</strong> — ${current.maxAppliances} eletrodomésticos · €${current.price}/ano</p>
+      <button class="btn btn-primary" data-nav="/appliances">Escolher eletrodomésticos →</button>
+    </div>` : '<div style="text-align:center"><p class="text-gray text-sm">Clique num plano para o selecionar.</p></div>'}
     <div style="max-width:700px;margin:3rem auto 0">
       <div class="card" style="overflow:hidden">
         <table style="width:100%;border-collapse:collapse;font-size:.875rem">
@@ -285,7 +279,6 @@ function choosePlan(planId) { selectPlan(planId); renderPlans(); }
 let appFilter = 'Todos', appSearch = '';
 
 function renderAppliances() {
-  const loggedIn = isLoggedIn();
   const plan = getCurrentPlan();
   const selected = getSelectedAppliances();
   const cats = ['Todos', ...new Set(APPLIANCES.map(a=>a.category))];
@@ -300,26 +293,19 @@ function renderAppliances() {
   document.getElementById('page-appliances').innerHTML = `
   <div class="ph"><div class="ph-inner">
     <h1>Catálogo de Eletrodomésticos</h1>
-    ${!loggedIn
-      ? `<div class="info-banner info-blue mt-3" style="max-width:520px">
-           ℹ️ Está a navegar como visitante.
-           <button data-nav="/register" style="background:none;border:none;cursor:pointer;color:#1d4ed8;font-weight:600;text-decoration:underline">Crie uma conta</button>
-           para subscrever um plano e alugar equipamentos.
+    ${!plan
+      ? `<div class="info-banner info-amber mt-3" style="max-width:520px">
+           ⚠️ Ainda não escolheu um plano.
+           <button data-nav="/plans" style="background:none;border:none;cursor:pointer;color:#92400e;font-weight:600;text-decoration:underline">Escolher plano →</button>
          </div>`
-      : (!plan
-          ? `<div class="info-banner info-amber mt-3" style="max-width:520px">
-               ⚠️ Ainda não escolheu um plano.
-               <button data-nav="/plans" style="background:none;border:none;cursor:pointer;color:#92400e;font-weight:600;text-decoration:underline">Escolher plano →</button>
-             </div>`
-          : `<p class="text-gray" style="font-size:.9rem;margin-top:4px">${plan.name} — até <strong>${plan.maxAppliances} eletrodomésticos</strong></p>
-             <div class="prog-wrap">
-               <div class="prog-bar-track">
-                 <div class="prog-bar-fill" style="width:${(selected.length/plan.maxAppliances)*100}%"></div>
-               </div>
-               <span class="text-sm text-gray">${selected.length}/${plan.maxAppliances} selecionados</span>
-               ${selected.length>0?`<button class="btn btn-primary" data-nav="/subscription" style="padding:8px 18px;font-size:.82rem">Ver subscrição →</button>`:''}
-             </div>`)
-    }
+      : `<p class="text-gray" style="font-size:.9rem;margin-top:4px">${plan.name} — até <strong>${plan.maxAppliances} eletrodomésticos</strong></p>
+         <div class="prog-wrap">
+           <div class="prog-bar-track">
+             <div class="prog-bar-fill" style="width:${(selected.length/plan.maxAppliances)*100}%"></div>
+           </div>
+           <span class="text-sm text-gray">${selected.length}/${plan.maxAppliances} selecionados</span>
+           ${selected.length>0?`<button class="btn btn-primary" data-nav="/subscription" style="padding:8px 18px;font-size:.82rem">Ver subscrição →</button>`:''}
+         </div>`}
   </div></div>
   <div class="pc">
     <div class="filter-bar">
@@ -337,8 +323,7 @@ function renderAppliances() {
         : '<div style="grid-column:1/-1;text-align:center;padding:4rem 0"><p style="font-size:2.5rem">🔍</p><p class="text-gray mt-3">Nenhum resultado encontrado.</p></div>'}
     </div>
   </div>
-  ${loggedIn && selected.length>0 && plan ? `
-  <div class="sticky-bar show" id="sticky-bar">
+  <div class="sticky-bar ${selected.length>0&&plan?'show':''}" id="sticky-bar">
     <div class="sticky-inner">
       <div>
         <p class="text-navy text-sm fw-600">${selected.length} eletrodoméstico${selected.length!==1?'s':''} selecionado${selected.length!==1?'s':''}</p>
@@ -346,7 +331,7 @@ function renderAppliances() {
       </div>
       <button class="btn btn-primary" data-nav="/subscription">Ver subscrição →</button>
     </div>
-  </div>` : ''}`;
+  </div>`;
 }
 
 function onSearch(val) {
@@ -384,15 +369,11 @@ function renderSubscription() {
 
   const remaining = plan.maxAppliances - selected.length;
   const canConfirm = selected.length > 0;
-  const alreadySubscribed = isSubscribed();
 
   el.innerHTML = `
   <div class="ph"><div class="ph-inner">
-    <h1>${alreadySubscribed ? 'O Meu Plano' : 'A Sua Subscrição'}</h1>
-    <p>${alreadySubscribed
-      ? 'Subscrição ativa. Gira os eletrodomésticos do seu plano e agende entregas livremente.'
-      : 'Reveja o seu plano e confirme a subscrição anual.'}</p>
-    ${alreadySubscribed ? '<div class="info-banner info-teal mt-3" style="max-width:520px">✓ Subscrição ativa — pode agendar entregas sem pagamentos adicionais.</div>' : ''}
+    <h1>A Sua Subscrição</h1>
+    <p>Reveja o seu plano e confirme a subscrição anual.</p>
   </div></div>
   <div class="pc">
     <div class="sub-grid">
@@ -465,21 +446,14 @@ function renderSubscription() {
               <div class="flex justify-between text-sm mb-2"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${selected.length}/${plan.maxAppliances}</span></div>
               <div class="flex justify-between text-sm mb-3"><span class="text-gray">Plano</span><span class="text-navy">${plan.name}</span></div>
               <div class="flex justify-between" style="font-size:1rem;border-top:1px solid var(--gray-100);padding-top:10px">
-                <span class="text-navy fw-600">${alreadySubscribed ? 'Já pago' : 'Total hoje'}</span>
+                <span class="text-navy fw-600">Total hoje</span>
                 <span class="text-teal fw-600">€${plan.price.toLocaleString('pt-PT')}</span>
               </div>
             </div>
-            ${alreadySubscribed ? `
-              <button onclick="navigate('/delivery')" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
-                🚚 Agendar Entrega →
-              </button>
-              ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Adicione pelo menos 1 eletrodoméstico</p>':''}
-            ` : `
-              <button onclick="handleConfirmSub()" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
-                Confirmar Subscrição →
-              </button>
-              ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Selecione pelo menos 1 eletrodoméstico</p>':''}
-            `}
+            <button onclick="handleConfirmSub()" class="btn btn-primary w-full mt-4" ${!canConfirm?'disabled':''}>
+              Confirmar Subscrição →
+            </button>
+            ${!canConfirm?'<p class="text-gray text-xs text-center mt-2">Selecione pelo menos 1 eletrodoméstico</p>':''}
           </div>
         </div>
         <div class="info-banner info-teal mt-3">
@@ -493,191 +467,14 @@ function renderSubscription() {
 
 function handleConfirmSub() {
   if (getSelectedAppliances().length===0) return;
-  if (isSubscribed()) {
-    navigate('/delivery');
-  } else {
-    navigate('/payment');
-  }
-}
-
-// ─── PAYMENT ──────────────────────────────────────────────────────────────────
-let payState = { method: 'mbway', processing: false };
-
-function renderPayment() {
-  const plan = getCurrentPlan();
-  const selected = getSelectedAppliances();
-  const el = document.getElementById('page-payment');
-
-  if (isSubscribed()) {
-    el.innerHTML = `<div class="success-wrap"><div class="success-box">
-      <div class="success-icon">✓</div>
-      <h2 style="margin-bottom:12px">Subscrição Ativa</h2>
-      <p class="text-gray mb-6">Já tem uma subscrição ativa. Pode agendar entregas livremente sem pagar de novo.</p>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-primary w-full" data-nav="/delivery">🚚 Agendar Entrega</button>
-        <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
-      </div>
-    </div></div>`;
-    return;
-  }
-
-  if (!plan || selected.length === 0) {
-    el.innerHTML = `<div class="success-wrap"><div class="success-box">
-      <div class="success-icon">⚠️</div>
-      <h2 style="margin-bottom:12px">Sem subscrição pendente</h2>
-      <p class="text-gray mb-6">Volte ao catálogo para escolher eletrodomésticos.</p>
-      <button class="btn btn-primary w-full" data-nav="/plans">Escolher Plano →</button>
-    </div></div>`;
-    return;
-  }
-
-  const methods = [
-    { id:'mbway',  name:'MB Way',     icon:'📱', desc:'Pagamento rápido via telemóvel' },
-    { id:'stripe', name:'Stripe',     icon:'💳', desc:'Cartão de crédito/débito' },
-    { id:'paypal', name:'PayPal',     icon:'🅿️', desc:'Conta PayPal ou cartão' },
-    { id:'mb',     name:'Multibanco', icon:'🏧', desc:'Referência multibanco' },
-  ];
-
-  el.innerHTML = `
-  <div class="ph"><div class="ph-inner">
-    <h1>Pagamento</h1>
-    <p>Escolha o método de pagamento para concluir a sua subscrição.</p>
-  </div></div>
-  <div class="pc">
-    <div class="pay-grid">
-      <div>
-        <div class="card p-5 mb-4">
-          <h3 style="font-size:1rem;margin-bottom:1rem">Método de pagamento</h3>
-          <div class="pay-methods">
-            ${methods.map(m=>`
-              <button class="pay-method ${payState.method===m.id?'selected':''}" onclick="pickPayMethod('${m.id}')">
-                <span class="pay-icon">${m.icon}</span>
-                <div class="pay-info">
-                  <p class="pay-name">${m.name}</p>
-                  <p class="pay-desc">${m.desc}</p>
-                </div>
-                ${payState.method===m.id?'<span class="pay-check">✓</span>':''}
-              </button>`).join('')}
-          </div>
-        </div>
-        <div class="card p-5">
-          <h3 style="font-size:1rem;margin-bottom:1rem">Detalhes</h3>
-          ${renderPayDetails()}
-        </div>
-      </div>
-      <div>
-        <div class="card" style="overflow:hidden;position:sticky;top:80px">
-          <div class="plan-head-card">
-            <p style="color:var(--teal);font-size:.82rem;font-weight:600;margin-bottom:6px">${plan.name}</p>
-            <div class="flex items-end gap-2">
-              <span style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;color:white">€${plan.price.toLocaleString('pt-PT')}</span>
-              <span style="color:#94a3b8;margin-bottom:5px">/ano</span>
-            </div>
-          </div>
-          <div class="p-5">
-            <p class="text-gray text-sm fw-600 mb-3">A pagar agora:</p>
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-gray">Subscrição anual</span>
-              <span class="text-navy">€${plan.price.toLocaleString('pt-PT')}</span>
-            </div>
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-gray">${selected.length} eletrodomésticos</span>
-              <span class="text-teal">Incluído</span>
-            </div>
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-gray">Entrega e instalação</span>
-              <span class="text-teal">Gratuito</span>
-            </div>
-            <div class="flex justify-between" style="font-size:1.05rem;border-top:1px solid var(--gray-100);padding-top:10px;margin-top:10px">
-              <span class="text-navy fw-600">Total</span>
-              <span class="text-teal fw-600">€${plan.price.toLocaleString('pt-PT')}</span>
-            </div>
-            <button onclick="processPayment()" class="btn btn-primary w-full mt-4" id="pay-btn" ${payState.processing?'disabled':''}>
-              ${payState.processing?'⏳ A processar...':`🔒 Pagar €${plan.price.toLocaleString('pt-PT')}`}
-            </button>
-            <p class="text-gray text-xs text-center mt-2">🔒 Pagamento seguro · Encriptação SSL</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderPayDetails() {
-  if (payState.method==='mbway') return `
-    <div class="field">
-      <label>Número de telemóvel</label>
-      <input type="text" placeholder="9XX XXX XXX" maxlength="11">
-      <p class="text-gray text-xs mt-1">Vai receber uma notificação no seu telemóvel.</p>
-    </div>`;
-  if (payState.method==='stripe') return `
-    <div class="field">
-      <label>Número do cartão</label>
-      <input type="text" placeholder="4242 4242 4242 4242" maxlength="19">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>Validade</label><input type="text" placeholder="MM/AA" maxlength="5"></div>
-      <div class="field"><label>CVV</label><input type="text" placeholder="123" maxlength="3"></div>
-    </div>`;
-  if (payState.method==='paypal') return `
-    <div class="field">
-      <label>Email PayPal</label>
-      <input type="text" placeholder="email@exemplo.com">
-      <p class="text-gray text-xs mt-1">Será redirecionado para a página do PayPal.</p>
-    </div>`;
-  if (payState.method==='mb') return `
-    <div class="info-banner info-blue">
-      ℹ️ Após confirmar, vai receber a entidade e referência para pagar em qualquer caixa Multibanco ou homebanking.
-    </div>`;
-  return '';
-}
-
-function pickPayMethod(id) { payState.method=id; renderPayment(); }
-
-function processPayment() {
-  payState.processing=true;
-  renderPayment();
-  setTimeout(() => {
-    confirmSubscription();
-    payState.processing=false;
-    renderPaymentSuccess();
-  }, 1500);
-}
-
-function renderPaymentSuccess() {
-  const plan=getCurrentPlan();
-  document.getElementById('page-payment').innerHTML=`
-  <div class="success-wrap"><div class="success-box">
-    <div class="success-icon">✅</div>
-    <h2 style="margin-bottom:12px">Pagamento Concluído!</h2>
-    <p class="text-gray mb-2">A sua subscrição <strong class="text-navy">${plan?.name||''}</strong> está ativa.</p>
-    <p class="text-gray mb-6">Total pago: <strong class="text-navy">€${plan?.price.toLocaleString('pt-PT')||'0'}</strong></p>
-    <div class="info-banner info-teal mb-4" style="text-align:left">
-      ✉️ Enviámos um comprovativo para o seu email.
-    </div>
-    <p class="text-gray text-sm mb-4">O próximo passo é agendar a entrega dos seus eletrodomésticos.</p>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-primary w-full" data-nav="/delivery">🚚 Agendar Entrega</button>
-      <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
-    </div>
-  </div></div>`;
+  confirmSubscription();
+  navigate('/delivery');
 }
 
 // ─── DELIVERY ─────────────────────────────────────────────────────────────────
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const SLOTS=['08:00 – 10:00','10:00 – 12:00','12:00 – 14:00','14:00 – 16:00','16:00 – 18:00'];
-let dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};
-
-function getDeliveredItemIds() {
-  const ids=new Set();
-  getDeliveries().forEach(d=>(d.items||[]).forEach(i=>ids.add(i.id)));
-  return ids;
-}
-
-function getPendingDeliveryItems() {
-  const delivered=getDeliveredItemIds();
-  return getSelectedAppliances().filter(a=>!delivered.has(a.id));
-}
+let dState={yr:null,mo:null,date:null,slot:null,addr:''};
 
 function renderDelivery() {
   const today=new Date();
@@ -688,84 +485,35 @@ function renderDelivery() {
   const {yr,mo,date,slot,addr}=dState;
   const dim=new Date(yr,mo+1,0).getDate();
   const fd=new Date(yr,mo,1).getDay();
+  const sel=getSelectedAppliances();
   const deliveries=getDeliveries();
-  const isFirstDelivery=deliveries.length===0;
-  const pendingItems=getPendingDeliveryItems();
-
-  if (isFirstDelivery && dState.itemIds.length===0)
-    dState.itemIds=getSelectedAppliances().map(a=>a.id);
-
-  const validIds=new Set(isFirstDelivery
-    ? getSelectedAppliances().map(a=>a.id)
-    : pendingItems.map(a=>a.id));
-  dState.itemIds=dState.itemIds.filter(id=>validIds.has(id));
-
-  const selectedItems=(isFirstDelivery?getSelectedAppliances():pendingItems)
-    .filter(a=>dState.itemIds.includes(a.id));
 
   const avail=d=>{const x=new Date(yr,mo,d);return x>=minD&&x<=maxD&&x.getDay()!==0&&x.getDay()!==6;};
   const isSel=d=>date&&date.getDate()===d&&date.getMonth()===mo&&date.getFullYear()===yr;
 
-  if (!isFirstDelivery && pendingItems.length===0) {
-    document.getElementById('page-delivery').innerHTML=`
-    <div class="success-wrap"><div class="success-box">
-      <div class="success-icon">📦</div>
-      <h2 style="margin-bottom:12px">Todas as entregas agendadas</h2>
-      <p class="text-gray mb-6">Todos os eletrodomésticos da sua subscrição já têm entrega agendada. Adicione mais eletrodomésticos ao seu plano para agendar uma nova entrega.</p>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-primary w-full" data-nav="/appliances">📦 Adicionar mais eletrodomésticos</button>
-        <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
-      </div>
-    </div></div>`;
-    return;
-  }
-
   document.getElementById('page-delivery').innerHTML=`
   <div class="ph"><div class="ph-inner">
-    <h1>${isFirstDelivery?'Agendar Entrega':'Agendar Nova Entrega'}</h1>
-    <p>${isFirstDelivery
-      ? 'Escolha uma data entre 7 e 30 dias. Apenas dias úteis.'
-      : 'Escolha quais eletrodomésticos quer receber nesta entrega.'}</p>
+    <h1>Agendar Entrega</h1>
+    <p>Escolha uma data entre 7 e 30 dias. Apenas dias úteis.</p>
   </div></div>
   <div class="pc">
     ${deliveries.length>0?`
     <div class="card p-5 mb-6">
-      <h3 style="font-size:1rem;margin-bottom:.875rem">📦 Entregas já agendadas</h3>
-      ${deliveries.map(d=>`
-        <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <span style="font-size:1.5rem;flex-shrink:0">🚚</span>
-          <div style="flex:1;min-width:0">
+      <h3 style="font-size:1rem;margin-bottom:.875rem">📦 Entregas agendadas</h3>
+      ${deliveries.map((d,i)=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+          <span style="font-size:1.5rem">🚚</span>
+          <div>
             <p class="text-navy text-sm fw-600">${d.date}</p>
             <p class="text-gray text-xs">${d.slot} · ${d.addr}</p>
-            ${(d.items||[]).length>0?`<p class="text-gray text-xs" style="margin-top:4px">📋 ${(d.items||[]).map(i=>i.name).join(', ')}</p>`:''}
           </div>
-          <span class="badge bg-green" style="flex-shrink:0">Agendada</span>
+          <span class="badge bg-green" style="margin-left:auto">Agendada</span>
         </div>`).join('')}
-    </div>`:''}
+    </div>` : ''}
     <div class="del-grid">
       <div>
-        ${!isFirstDelivery?`
-        <div class="card p-5 mb-5">
-          <div class="flex items-center gap-2 mb-3"><span>📋</span><h3 style="font-size:1rem">Eletrodomésticos para esta entrega</h3></div>
-          <p class="text-gray text-sm mb-3">Selecione quais eletrodomésticos quer receber. Apenas eletrodomésticos sem entrega agendada estão disponíveis.</p>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${pendingItems.map(a=>{
-              const checked=dState.itemIds.includes(a.id);
-              return `
-              <label class="item-pick ${checked?'checked':''}" onclick="toggleDelItem('${a.id}')">
-                <input type="checkbox" ${checked?'checked':''} style="margin-right:8px;cursor:pointer" onclick="event.stopPropagation();toggleDelItem('${a.id}')">
-                <img src="${a.image}" alt="${a.name}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.src='https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=42&h=42&fit=crop'">
-                <div style="flex:1;min-width:0">
-                  <p class="text-navy text-sm fw-600 truncate">${a.name}</p>
-                  <p class="text-gray" style="font-size:.7rem">${CATEGORY_ICONS[a.category]||''} ${a.category}</p>
-                </div>
-              </label>`;
-            }).join('')}
-          </div>
-          ${dState.itemIds.length===0?'<p class="text-gray text-xs mt-3">Selecione pelo menos 1 eletrodoméstico.</p>':`<p class="text-teal text-xs fw-600 mt-3">✓ ${dState.itemIds.length} selecionado(s)</p>`}
-        </div>`:''}
         <div class="info-banner info-blue mb-5">
-          ℹ️ Entregas disponíveis <strong>de segunda a sexta-feira</strong>, entre
+          ℹ️ Entregas disponíveis<strong>de segunda a sexta-feira</strong>, entre
           <strong>${minD.toLocaleDateString('pt-PT',{day:'numeric',month:'long'})}</strong> e
           <strong>${maxD.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})}</strong>.
         </div>
@@ -795,56 +543,28 @@ function renderDelivery() {
         ${date&&slot?`
         <div class="card p-6">
           <div class="flex items-center gap-2 mb-3"><span>📍</span><h3 style="font-size:1rem">Morada de entrega</h3></div>
-          <input type="text" id="d-addr" placeholder="Morada completa de entrega..." value="${addr}" oninput="onAddrInput(this.value)">
+          <input type="text" id="d-addr" placeholder="Morada completa de entrega..." value="${addr}" oninput="dState.addr=this.value">
         </div>`:''}
       </div>
       <div>
-        <div class="card p-5" style="position:sticky;top:80px">
+        <div class="card p-5">
           <h3 style="font-size:1rem;margin-bottom:1rem">Resumo</h3>
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem;font-size:.875rem">
             <div class="flex justify-between"><span class="text-gray">Data</span><span class="text-navy">${date?date.toLocaleDateString('pt-PT',{day:'numeric',month:'short',year:'numeric'}):'—'}</span></div>
             <div class="flex justify-between"><span class="text-gray">Horário</span><span class="text-navy">${slot||'—'}</span></div>
-            <div class="flex justify-between"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${selectedItems.length}</span></div>
+            <div class="flex justify-between"><span class="text-gray">Eletrodomésticos</span><span class="text-navy">${sel.length}</span></div>
             <div class="flex justify-between"><span class="text-gray">Taxa de entrega</span><span class="text-teal">Gratuita</span></div>
           </div>
-          ${selectedItems.length>0?`
-          <div style="border-top:1px solid var(--gray-100);padding-top:.875rem;margin-bottom:1rem">
-            <p class="text-gray text-xs mb-2">Artigos:</p>
-            ${selectedItems.map(a=>`<div class="flex items-center gap-2 text-sm" style="margin-bottom:5px"><span>${CATEGORY_ICONS[a.category]||'📦'}</span><span class="text-gray truncate">${a.name}</span></div>`).join('')}
-          </div>`:''}
-          <button id="d-confirm-btn" onclick="confirmDel()" class="btn btn-primary w-full" ${!date||!slot||!addr||selectedItems.length===0?'disabled':''}>
+          <button onclick="confirmDel()" class="btn btn-primary w-full" ${!date||!slot||!addr?'disabled':''}>
             🚚 Confirmar Entrega
           </button>
-          <p id="d-hint" class="text-gray text-xs text-center mt-2">${
-            selectedItems.length===0?'Selecione eletrodomésticos':
-            !date?'Selecione uma data':
-            !slot?'Escolha um horário':
-            !addr?'Introduza a morada':''
-          }</p>
+          ${!date?'<p class="text-gray text-xs text-center mt-2">Selecione uma data</p>':
+            !slot?'<p class="text-gray text-xs text-center mt-2">Escolha um horário</p>':
+            !addr?'<p class="text-gray text-xs text-center mt-2">Introduza a morada</p>':''}
         </div>
       </div>
     </div>
   </div>`;
-}
-
-function onAddrInput(val) {
-  dState.addr=val;
-  const btn=document.getElementById('d-confirm-btn');
-  const hint=document.getElementById('d-hint');
-  if (!btn) return;
-  const {date,slot}=dState;
-  const isFirst=getDeliveries().length===0;
-  const pending=isFirst?getSelectedAppliances():getPendingDeliveryItems();
-  const selItems=pending.filter(a=>dState.itemIds.includes(a.id));
-  const ready=date&&slot&&val.trim()&&selItems.length>0;
-  btn.disabled=!ready;
-  if (hint) hint.textContent=selItems.length===0?'Selecione eletrodomésticos':!date?'Selecione uma data':!slot?'Escolha um horário':!val.trim()?'Introduza a morada':'';
-}
-
-function toggleDelItem(id) {
-  const i=dState.itemIds.indexOf(id);
-  if (i>=0) dState.itemIds.splice(i,1); else dState.itemIds.push(id);
-  renderDelivery();
 }
 
 function prevMo(){if(dState.mo===0){dState.mo=11;dState.yr--;}else dState.mo--;renderDelivery();}
@@ -852,21 +572,19 @@ function nextMo(){if(dState.mo===11){dState.mo=0;dState.yr++;}else dState.mo++;r
 function pickDate(d){dState.date=new Date(dState.yr,dState.mo,d);dState.slot=null;renderDelivery();}
 function pickSlot(s){dState.slot=s;renderDelivery();}
 
-function confirmDel() {
-  if (!dState.date||!dState.slot||!dState.addr||dState.itemIds.length===0) return;
-  const allCandidates=getDeliveries().length===0?getSelectedAppliances():getPendingDeliveryItems();
-  const items=allCandidates.filter(a=>dState.itemIds.includes(a.id));
+function confirmDel(){
+  if(!dState.date||!dState.slot||!dState.addr) return;
   const del={
     date:dState.date.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
-    slot:dState.slot, addr:dState.addr, items
+    slot:dState.slot, addr:dState.addr
   };
-  const result=saveDelivery(del);
-  if (!result.ok){ alert(result.error); return; }
-  dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};
+  saveDelivery(del);
+  // reset form para permitir agendar outra
+  dState={yr:null,mo:null,date:null,slot:null,addr:''};
   renderDeliverySuccess(del);
 }
 
-function renderDeliverySuccess(del) {
+function renderDeliverySuccess(del){
   document.getElementById('page-delivery').innerHTML=`
   <div class="success-wrap"><div class="success-box">
     <div class="success-icon">✅</div>
@@ -886,7 +604,7 @@ function renderDeliverySuccess(del) {
         </div>`).join('')}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-primary w-full" onclick="dState={yr:null,mo:null,date:null,slot:null,addr:'',itemIds:[]};navigate('/delivery')">
+      <button class="btn btn-primary w-full" onclick="dState={yr:null,mo:null,date:null,slot:null,addr:''};navigate('/delivery')">
         📅 Agendar outra entrega
       </button>
       <button class="btn btn-outline w-full" data-nav="/dashboard">Ver Painel</button>
@@ -895,7 +613,7 @@ function renderDeliverySuccess(del) {
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function renderDashboard() {
+function renderDashboard(){
   const user=getCurrentUser();
   const plan=getCurrentPlan();
   const selected=getSelectedAppliances();
@@ -930,6 +648,8 @@ function renderDashboard() {
         ${!plan?`<div class="info-banner info-amber">⚠️ Ainda não tem plano.
           <button data-nav="/plans" style="background:none;border:none;cursor:pointer;color:#92400e;font-weight:600;text-decoration:underline">Escolher plano →</button>
         </div>`:''}
+
+        <!-- Eletrodomésticos ativos -->
         <div class="card" style="overflow:hidden">
           <div class="flex justify-between items-center p-5" style="border-bottom:1px solid var(--gray-100)">
             <h2 style="font-size:1rem">Os Meus Eletrodomésticos</h2>
@@ -958,6 +678,8 @@ function renderDashboard() {
               </div>`}
           </div>
         </div>
+
+        <!-- Alugueres anulados -->
         ${cancelled.length>0?`
         <div class="card" style="overflow:hidden">
           <div class="flex items-center p-5" style="border-bottom:1px solid var(--gray-100);gap:8px">
@@ -977,6 +699,8 @@ function renderDashboard() {
               </div>`).join('')}
           </div>
         </div>`:''}
+
+        <!-- Entregas -->
         <div class="card" style="overflow:hidden">
           <div class="flex justify-between items-center p-5" style="border-bottom:1px solid var(--gray-100)">
             <h2 style="font-size:1rem">Entregas</h2>
@@ -1001,6 +725,8 @@ function renderDashboard() {
           </div>
         </div>
       </div>
+
+      <!-- Sidebar -->
       <div style="display:flex;flex-direction:column;gap:1rem">
         ${plan?`
         <div style="background:linear-gradient(135deg,var(--teal),var(--teal-d));border-radius:18px;padding:1.4rem;color:white">
